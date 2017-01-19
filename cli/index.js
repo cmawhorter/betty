@@ -28,7 +28,7 @@ function getCommand(id) {
 module.exports = yargs
   .command(getCommand('build'))
   .command(getCommand('deploy'))
-  .command(getCommand('init'))
+  // .command(getCommand('init'))
   .command(getCommand('info'))
   .command(getCommand('logs'))
   .command(getCommand('serve'))
