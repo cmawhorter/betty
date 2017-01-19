@@ -11,11 +11,17 @@ var cache;
 
 exports.command = 'build';
 exports.desc    = 'Compiles and transpiles source into a lambda-ready build';
-exports.builder = {};
+exports.builder = {
+  rollup: {
+    config:         true,
+    describe:       'File for require([file]) that will provide options for rollup.rollup([options])',
+  },
+};
+
 exports.handler = function(argv) {
   let promise = new Promise((resolve, reject) => {
     console.log('Build started...');
-    rollup.rollup({
+    let defaultRollupOptions = {
       entry:          path.join(process.cwd(), argv.source || 'src/main.js'),
       cache:          cache,
       plugins: [
@@ -42,7 +48,8 @@ exports.handler = function(argv) {
         'dns',
         'module',
       ],
-    }).then(bundle => {
+    };
+    rollup.rollup(argv.rollup || defaultRollupOptions).then(bundle => {
       cache = bundle; // build doesn't watch so this isn't used
       bundle.write({
         format:       'cjs',

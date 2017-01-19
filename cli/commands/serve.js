@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require('path');
-const createServer = require('../lib/server.js');
+const createServer = require('../../lib/server.js');
 
 exports.command = 'serve';
 exports.desc    = 'Starts a local web server that emulates lambda to allow for locally invoking the function';

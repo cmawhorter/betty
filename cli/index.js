@@ -3,59 +3,36 @@
 
 process.title = 'betty';
 
-const fs          = require('fs');
-const path        = require('path');
-const deepAssign  = require('deep-assign');
-const yargs       = require('yargs');
+const path            = require('path');
+const deepAssign      = require('deep-assign');
+const yargs           = require('yargs');
 
-const envHelperUtil = function load(file) {
-  return JSON.parse(fs.readFileSync(file).toString());
-};
+const parseConfigFile = require('../lib/parse-config-file.js');
 
-const universalOptions = {
-  config: {
-    alias:    'c',
-    describe: 'Betty project config file',
-    default:  path.join(process.cwd(), 'project.json'),
-    coerce: (arg) => {
-      let config = {};
-      try {
-        config = require(arg);
-      }
-      catch (err) {
-      }
-      try {
-        let pkg = require('package.json');
-        [ 'name', 'description', 'main' ].forEach(property => {
-          if (pkg.hasOwnProperty(property)) {
-            config[property] = pkg[property];
-          }
-        });
-      }
-      catch (err) {
-      }
-      if (config.environment && typeof config.environment === 'string') {
-        config.environment = eval([
-          envHelperUtil.toString(),
-          config.environment,
-        ].join('\n'));
-      }
-      return config;
-    }
-  }
-};
+const rootProjectJson = path.join(process.cwd(), 'project.json');
 
 function getCommand(id) {
   let cmd = require(`./commands/${id}.js`);
-  return deepAssign({}, { builder: universalOptions }, cmd);
+  return deepAssign({
+    builder: {
+      config: {
+        alias:      'c',
+        describe:   'Betty project config file',
+        default:    rootProjectJson,
+        coerce:     parseConfigFile(rootProjectJson),
+      },
+    },
+  }, cmd);
 }
 
-let argv = yargs.command(getCommand('info'))
-  .command(getCommand('serve'))
+module.exports = yargs
   .command(getCommand('build'))
-  .command(getCommand('update'))
   .command(getCommand('deploy'))
+  .command(getCommand('init'))
+  .command(getCommand('info'))
+  .command(getCommand('logs'))
+  .command(getCommand('serve'))
+  .command(getCommand('update'))
   .help('h')
   .alias('h', 'help')
-  .version(() => require(path.join(__dirname, '../package.json')).version)
   .argv;

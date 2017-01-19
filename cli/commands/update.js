@@ -5,7 +5,7 @@ const path          = require('path');
 const streamBuffers = require('stream-buffers');
 const AWS           = require('aws-sdk');
 const archiver      = require('archiver');
-const waterfall     = require('../lib/waterfall.js');
+const waterfall     = require('../../lib/waterfall.js');
 
 exports.command = 'update';
 exports.desc    = 'Uploads the contents of dist to lambda as a new function version';
@@ -14,7 +14,7 @@ exports.builder = {
     describe:       'AWS region to deploy to. Defaults to $AWS_REGION',
     default:        process.env.AWS_REGION,
   },
-  'test': {
+  test: {
     describe:       'Outputs bundled code to build directory and does not contact AWS',
     boolean:        true,
     default:        false,
