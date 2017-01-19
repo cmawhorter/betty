@@ -83,3 +83,5 @@ This allows you to do this for staged env vars.
 ```
   "environment": "load(`env-${process.env.NODE_ENV}.json`)"
 ```
+
+Because `require` is relative to the source file it can't be used.  `load()` basically does the same thing so you don't have to JSON.parse(fs.read blah blah.
