@@ -6,6 +6,8 @@ const rollup      = require('rollup');
 const babel       = require('rollup-plugin-babel');
 const nodeResolve = require('rollup-plugin-node-resolve');
 const commonjs    = require('rollup-plugin-commonjs');
+const builtins    = require('rollup-plugin-node-builtins');
+const globals     = require('rollup-plugin-node-globals');
 
 var cache;
 
@@ -25,6 +27,8 @@ exports.handler = function(argv) {
       entry:          path.join(process.cwd(), argv.source || 'src/main.js'),
       cache:          cache,
       plugins: [
+        globals(),
+        builtins(),
         nodeResolve({
           jsnext:     true,
           main:       true,
@@ -34,19 +38,13 @@ exports.handler = function(argv) {
         }),
         babel({
           exclude:    'node_modules/**',
+          presets:    [ [ 'es2015', { modules: false } ] ],
+          plugins:    [ 'external-helpers' ],
+          babelrc:    false,
         }),
       ],
       external: [
         'aws-sdk',
-        'buffer',
-        'stream',
-        'util',
-        'crypto',
-        'path',
-        'fs',
-        'net',
-        'dns',
-        'module',
       ],
     };
     rollup.rollup(argv.rollup || defaultRollupOptions).then(bundle => {
