@@ -9,8 +9,6 @@ const yargs           = require('yargs');
 
 const parseConfigFile = require('../lib/parse-config-file.js');
 
-const rootProjectJson = path.join(process.cwd(), 'project.json');
-
 function getCommand(id) {
   let cmd = require(`./commands/${id}.js`);
   return deepAssign({
@@ -18,8 +16,8 @@ function getCommand(id) {
       config: {
         alias:      'c',
         describe:   'Betty project config file',
-        default:    rootProjectJson,
-        coerce:     parseConfigFile(rootProjectJson),
+        default:    'project.json',
+        coerce:     parseConfigFile,
       },
     },
   }, cmd);
