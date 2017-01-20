@@ -6,8 +6,8 @@ const rollup      = require('rollup');
 const babel       = require('rollup-plugin-babel');
 const nodeResolve = require('rollup-plugin-node-resolve');
 const commonjs    = require('rollup-plugin-commonjs');
-const builtins    = require('rollup-plugin-node-builtins');
-const globals     = require('rollup-plugin-node-globals');
+
+const builtins    = require('builtin-modules');
 
 var cache;
 
@@ -18,36 +18,47 @@ exports.builder = {
     config:         true,
     describe:       'File for require([file]) that will provide options for rollup.rollup([options])',
   },
+  external: {
+    alias:          'e',
+    array:          true,
+    describe:       'node_modules that should be marked as external',
+  },
+  builtins: {
+    boolean:        true,
+    describe:       'Built-in node modules will be set to external',
+    default:        true,
+  },
+  // 'copy-external': {
+  //   boolean:        true,
+  //   describe:       'Externals that exist in node_modules should be copied to dist as-is',
+  // },
 };
 
 exports.handler = function(argv) {
   let promise = new Promise((resolve, reject) => {
     console.log('Build started...');
     let defaultRollupOptions = {
-      entry:          path.join(process.cwd(), argv.source || 'src/main.js'),
-      cache:          cache,
+      entry:              path.join(process.cwd(), argv.source || 'src/main.js'),
+      cache:              cache,
       plugins: [
-        globals(),
-        builtins(),
         nodeResolve({
-          jsnext:     true,
-          main:       true,
+          jsnext:         true,
+          main:           true,
         }),
         commonjs({
-          include:    'node_modules/**'
+          include:        'node_modules/**',
         }),
         babel({
-          exclude:    'node_modules/**',
-          presets:    [ [ 'es2015', { modules: false } ] ],
-          plugins:    [ 'external-helpers' ],
-          babelrc:    false,
+          exclude:        'node_modules/**',
+          babelrc:        false,
+          presets:        [ [ 'es2015', { modules: false } ] ],
+          plugins:        [ 'external-helpers' ],
         }),
       ],
-      external: [
-        'aws-sdk',
-      ],
+      external:           [].concat([ 'aws-sdk' ], argv.builtins ? builtins : [], argv.external || []),
     };
-    rollup.rollup(argv.rollup || defaultRollupOptions).then(bundle => {
+    let buildConfig = argv.rollup || defaultRollupOptions;
+    rollup.rollup(buildConfig).then(bundle => {
       cache = bundle; // build doesn't watch so this isn't used
       bundle.write({
         format:       'cjs',
