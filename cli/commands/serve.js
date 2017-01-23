@@ -1,13 +1,38 @@
 'use strict';
 
 const path = require('path');
-const createServer = require('../../lib/server.js');
+const createServer = require('lambda-emulator');
+
+const exampleEvalHandler = function(event, context, callback) { callback(null, { hello: 'world' }); };
 
 exports.command = 'serve';
 exports.desc    = 'Starts a local web server that emulates lambda to allow for locally invoking the function';
-exports.builder = {};
+exports.builder = {
+  type: {
+    alias:          't',
+    describe:       'Type of lambda handler to test',
+    default:        'lambda',
+    choices:        [ 'lambda', 'apigateway' ],
+  },
+  eval: {
+    describe:       `Mainly for dev. Pass a lambda handler as a string e.g.:\n(${exampleEvalHandler.toString()})`,
+  },
+};
 exports.handler = function(argv) {
-  let functionModule = require(path.join(process.cwd(), argv.main || 'dist/index.js'));
-  let lambdaHandler = functionModule.handler;
-  createServer(lambdaHandler);
+  let lambdaHandler;
+  if (argv.eval) {
+    try {
+      lambdaHandler = eval(argv.eval);
+    }
+    catch (err) {
+      console.log('error eval fn', err.stack || err);
+      console.log('received function string: ', argv.eval);
+      process.exit(1);
+    }
+  }
+  else {
+    let functionModule = require(path.join(process.cwd(), argv.main || 'dist/index.js'));
+    lambdaHandler = functionModule.handler;
+  }
+  createServer(lambdaHandler, argv.type);
 };

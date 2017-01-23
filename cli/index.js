@@ -15,7 +15,7 @@ function getCommand(id) {
     builder: {
       config: {
         alias:      'c',
-        describe:   'Betty project config file',
+        describe:   'Betty project config file or json string',
         default:    'project.json',
         coerce:     parseConfigFile,
       },
@@ -26,7 +26,6 @@ function getCommand(id) {
 module.exports = yargs
   .command(getCommand('build'))
   .command(getCommand('deploy'))
-  // .command(getCommand('init'))
   .command(getCommand('info'))
   .command(getCommand('logs'))
   .command(getCommand('serve'))

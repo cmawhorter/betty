@@ -5,7 +5,7 @@ const path          = require('path');
 const streamBuffers = require('stream-buffers');
 const AWS           = require('aws-sdk');
 const archiver      = require('archiver');
-const waterfall     = require('../../lib/waterfall.js');
+const waterfall     = require('waterfall');
 
 exports.command = 'update';
 exports.desc    = 'Uploads the contents of dist to lambda as a new function version';
