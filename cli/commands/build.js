@@ -6,6 +6,7 @@ const rollup      = require('rollup');
 const babel       = require('rollup-plugin-babel');
 const nodeResolve = require('rollup-plugin-node-resolve');
 const commonjs    = require('rollup-plugin-commonjs');
+const json        = require('rollup-plugin-json');
 
 const builtins    = require('builtin-modules');
 
@@ -41,6 +42,7 @@ exports.handler = function(argv) {
       entry:              path.join(process.cwd(), argv.source || 'src/main.js'),
       cache:              cache,
       plugins: [
+        json(),
         nodeResolve({
           jsnext:         true,
           main:           true,
