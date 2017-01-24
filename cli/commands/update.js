@@ -143,5 +143,6 @@ exports.handler = function(argv) {
       resolve();
     });
   });
+  promise.catch(err => console.log('Update Error', err.stack || err));
   return promise;
 };
