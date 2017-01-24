@@ -78,7 +78,7 @@ exports.handler = function(argv) {
           plugins:        [ 'external-helpers' ],
         }),
       ],
-      external:           [].concat([ 'aws-sdk' ], argv.builtins ? builtins : [], argv.external || []),
+      external:           [].concat([ 'aws-sdk', require.resolve('aws-sdk') ], argv.builtins ? builtins : [], argv.external || []),
     };
     let buildConfig = argv.rollup || defaultRollupOptions;
     argv.verbose && console.log('Build Config: ', JSON.stringify(buildConfig, null, 2));
