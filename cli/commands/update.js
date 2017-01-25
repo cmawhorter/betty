@@ -122,7 +122,11 @@ exports.handler = (argv, done) => {
       if (!argv.config['dead-letter']) return next(null, null);
       if (true === argv.config['dead-letter']) {
         let parsed = arn.parse(state.role);
-        next(null, arn.format(Object.assign(parsed, { service: 'sqs', resource: `lambda-dlq-${argv.config.name}` })));
+        next(null, arn.format(Object.assign(parsed, {
+          service:      'sqs',
+          region:       argv.region,
+          resource:     `lambda-dlq-${argv.config.name}`,
+        })));
       }
       else if (0 === argv.config['dead-letter'].indexOf('arn:')) {
         next(null, argv.config['dead-letter']);
