@@ -1,6 +1,12 @@
 # betty
 Simple command line utility for developing and deploying AWS Lambda functions.
 
+Why? Because webpack wasn't cutting it: 
+
+![Size matters](docs/code-size.png)
+
+Webpack regularly put out 10MB bundles.  Rollup does magic, and reduces that down to just what's needed.  Like god intended.
+
 ## Prerequisites
 
 - Create an IAM role for your lambda function
