@@ -2,7 +2,6 @@
 
 const path = require('path');
 const spawn = require('child_process').spawn;
-const createHandler = require('../lib/command-handler.js');
 
 exports.command = 'logs';
 exports.desc    = 'Streams the cloudwatch log for the function';
@@ -20,7 +19,7 @@ exports.builder = {
     describe:       'The CloudWatch log name.  Defaults to the project.name',
   },
 };
-exports.handler = createHandler((argv, done) => {
+exports.handler = (argv, done) => {
   const cmd = path.join(process.cwd(), './node_modules/.bin', 'pbcw');
   const cmdArgs = [
     `-p${argv.profile}`,
@@ -35,4 +34,4 @@ exports.handler = createHandler((argv, done) => {
     cwd:            process.cwd(),
   });
   done(null);
-});
+};

@@ -89,60 +89,56 @@ function getExistingFunction(lambda, FunctionName, next) {
   lambda.getFunctionConfiguration(params, (err, data) => next(null, err ? false : data));
 }
 
-exports.handler = function(argv) {
-  let promise = new Promise((resolve, reject) => {
-    console.log('Update started...');
-    let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
-    if (argv.test) {
-      createCodeBundle(dist, (err, bufferCode) => {
-        if (err) throw err;
-        let bundleZip = path.join(dist, 'bundle.zip');
-        fs.writeFileSync(bundleZip, bufferCode);
-        console.log('Done.  Created ', bundleZip);
-      });
-      return;
-    }
-    let lambda = new AWS.Lambda({ region: argv.region });
-    waterfall({
-      role: (state, next) => {
-        if (!argv.config.role) return next(new Error('IAM role required'));
-        if (0 === argv.config.role.indexOf('arn:')) {
-          next(null, argv.config.role);
-        }
-        else {
-          console.log('\t-> Expanding relative role');
-          let iam = new AWS.IAM({ region: argv.region });
-          expandRelativeRole(iam, argv.config.role, next);
-        }
-      },
-      bundle: (state, next) => {
-        console.log('\t-> Bundling');
-        createCodeBundle(dist, next);
-      },
-      exists: (state, next) => {
-        console.log('\t-> Checking if new');
-        getExistingFunction(lambda, argv.config.name, next);
-      },
-      update: (state, next) => {
-        if (state.exists) {
-          console.log('\t-> Updating');
-          updateFunction(lambda, state.role, argv.config, state.bundle, next);
-        }
-        else {
-          console.log('\t-> Creating');
-          createFunction(lambda, state.role, argv.config, state.bundle, next);
-        }
-      },
-    }, (err, state) => {
-      if (err) {
-        console.log('Update completed with error');
-        console.log(err.stack || err);
-        return reject(err);
-      }
-      console.log('Update completed successfully');
-      resolve();
+exports.handler = (argv, done) => {
+  console.log('Update started...');
+  let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
+  if (argv.test) {
+    createCodeBundle(dist, (err, bufferCode) => {
+      if (err) throw err;
+      let bundleZip = path.join(dist, 'bundle.zip');
+      fs.writeFileSync(bundleZip, bufferCode);
+      console.log('Done.  Created ', bundleZip);
     });
+    return;
+  }
+  let lambda = new AWS.Lambda({ region: argv.region });
+  waterfall({
+    role: (state, next) => {
+      if (!argv.config.role) return next(new Error('IAM role required'));
+      if (0 === argv.config.role.indexOf('arn:')) {
+        next(null, argv.config.role);
+      }
+      else {
+        console.log('\t-> Expanding relative role');
+        let iam = new AWS.IAM({ region: argv.region });
+        expandRelativeRole(iam, argv.config.role, next);
+      }
+    },
+    bundle: (state, next) => {
+      console.log('\t-> Bundling');
+      createCodeBundle(dist, next);
+    },
+    exists: (state, next) => {
+      console.log('\t-> Checking if new');
+      getExistingFunction(lambda, argv.config.name, next);
+    },
+    update: (state, next) => {
+      if (state.exists) {
+        console.log('\t-> Updating');
+        updateFunction(lambda, state.role, argv.config, state.bundle, next);
+      }
+      else {
+        console.log('\t-> Creating');
+        createFunction(lambda, state.role, argv.config, state.bundle, next);
+      }
+    },
+  }, (err, state) => {
+    if (err) {
+      console.log('Update completed with error');
+      console.log(err.stack || err);
+      return done(err);
+    }
+    console.log('Update completed successfully');
+    done(null);
   });
-  promise.catch(err => console.log('Update Error', err.stack || err));
-  return promise;
 };

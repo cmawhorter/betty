@@ -10,7 +10,8 @@ const json        = require('rollup-plugin-json');
 const analyzer    = require('rollup-analyzer');
 const builtins    = require('builtin-modules');
 
-var cache;
+
+let cache;
 
 exports.command = 'build';
 exports.desc    = 'Compiles and transpiles source into a lambda-ready build';
@@ -53,50 +54,46 @@ exports.builder = {
   // },
 };
 
-exports.handler = function(argv) {
-  let promise = new Promise((resolve, reject) => {
-    console.log('Build started...');
-    let defaultRollupOptions = {
-      entry:              path.join(process.cwd(), argv.source || 'src/main.js'),
-      cache:              cache,
-      plugins: [
-        json({
-          exclude:        [].concat([ 'node_modules/aws-sdk/**' ], argv.exclude || []),
-        }),
-        nodeResolve({
-          jsnext:         true,
-          main:           true,
-        }),
-        commonjs({
-          include:        'node_modules/**',
-          exclude:        [].concat([ 'node_modules/aws-sdk/**' ], argv.exclude || []),
-        }),
-        babel({
-          exclude:        'node_modules/**',
-          babelrc:        false,
-          presets:        [ [ 'es2015', { modules: false } ] ],
-          plugins:        [ 'external-helpers' ],
-        }),
-      ],
-      external:           [].concat([ 'aws-sdk', require.resolve('aws-sdk') ], argv.builtins ? builtins : [], argv.external || []),
-    };
-    let buildConfig = argv.rollup || defaultRollupOptions;
-    argv.verbose && console.log('Build Config: ', JSON.stringify(buildConfig, null, 2));
-    rollup.rollup(buildConfig).then(bundle => {
-      cache = bundle; // build doesn't watch so this isn't used
-      bundle.write({
-        format:       'cjs',
-        sourceMap:    true,
-        dest:         argv.main || 'dist/index.js',
-      });
-      console.log('Build completed.');
-      if (argv.analyze) {
-        console.log('\n\n');
-        analyzer.formatted(bundle).then(console.log).catch(console.error);
-      }
-      resolve();
-    }, reject);
-  });
-  promise.catch(err => console.log('Build Error', err.stack || err));
-  return promise;
+exports.handler = (argv, done) => {
+  console.log('Build started...');
+  let defaultRollupOptions = {
+    entry:              path.join(process.cwd(), argv.source || 'src/main.js'),
+    cache:              cache,
+    plugins: [
+      json({
+        exclude:        [].concat([ 'node_modules/aws-sdk/**' ], argv.exclude || []),
+      }),
+      nodeResolve({
+        jsnext:         true,
+        main:           true,
+      }),
+      commonjs({
+        include:        'node_modules/**',
+        exclude:        [].concat([ 'node_modules/aws-sdk/**' ], argv.exclude || []),
+      }),
+      babel({
+        exclude:        'node_modules/**',
+        babelrc:        false,
+        presets:        [ [ 'es2015', { modules: false } ] ],
+        plugins:        [ 'external-helpers' ],
+      }),
+    ],
+    external:           [].concat([ 'aws-sdk', require.resolve('aws-sdk') ], argv.builtins ? builtins : [], argv.external || []),
+  };
+  let buildConfig = argv.rollup || defaultRollupOptions;
+  argv.verbose && console.log('Build Config: ', JSON.stringify(buildConfig, null, 2));
+  rollup.rollup(buildConfig).then(bundle => {
+    cache = bundle; // build doesn't watch so this isn't used
+    bundle.write({
+      format:       'cjs',
+      sourceMap:    true,
+      dest:         argv.main || 'dist/index.js',
+    });
+    console.log('Build completed.');
+    if (argv.analyze) {
+      console.log('\n\n');
+      analyzer.formatted(bundle).then(console.log).catch(console.error);
+    }
+    done(null);
+  }, done);
 };

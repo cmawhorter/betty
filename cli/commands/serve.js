@@ -18,7 +18,7 @@ exports.builder = {
     describe:       `Mainly for dev. Pass a lambda handler as a string e.g.:\n(${exampleEvalHandler.toString()})`,
   },
 };
-exports.handler = function(argv) {
+exports.handler = function(argv, done) {
   let lambdaHandler;
   if (argv.eval) {
     try {
@@ -35,4 +35,5 @@ exports.handler = function(argv) {
     lambdaHandler = functionModule.handler;
   }
   createServer(lambdaHandler, argv.type);
+  done(null);
 };

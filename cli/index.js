@@ -3,33 +3,29 @@
 
 process.title = 'betty';
 
-const path            = require('path');
-const deepAssign      = require('deep-assign');
+const assert          = require('assert');
 const yargs           = require('yargs');
+const composeCommands = require('./lib/compose.js');
+const parseConfigFile = require('../common/parse-config-file.js');
 
-const parseConfigFile = require('../lib/parse-config-file.js');
-
-function getCommand(id) {
-  let cmd = require(`./commands/${id}.js`);
-  return deepAssign({
-    builder: {
-      config: {
-        alias:      'c',
-        describe:   'Betty project config file or json string',
-        default:    'project.json',
-        coerce:     parseConfigFile,
-      },
-    },
-  }, cmd);
-}
+const cmds = require('require-dir')('./commands/');
+// make sure filename and command match
+Object.keys(cmds).forEach(commandId => assert.strictEqual(commandId, cmds[commandId].command));
 
 module.exports = yargs
-  .command(getCommand('build'))
-  .command(getCommand('deploy'))
-  .command(getCommand('info'))
-  .command(getCommand('logs'))
-  .command(getCommand('serve'))
-  .command(getCommand('update'))
+  .option('config', {
+    global:     true,
+    alias:      'c',
+    desc:       'Betty project config project.json or json string',
+    default:    'project.json',
+    coerce:     parseConfigFile,
+  })
+  .command(cmds.build)
+  .command(cmds.info)
+  .command(cmds.logs)
+  .command(cmds.serve)
+  .command(cmds.update)
+  .command(composeCommands('deploy', [ cmds.build, cmds.update ]))
   .help('h')
   .alias('h', 'help')
   .argv;
