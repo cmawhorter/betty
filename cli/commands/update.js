@@ -128,6 +128,14 @@ exports.handler = (argv, done) => {
           resource:     `lambda-dlq-${argv.config.name}`,
         })));
       }
+      else if (typeof argv.config['dead-letter'] === 'string') {
+        let parsed = arn.parse(state.role);
+        next(null, arn.format(Object.assign(parsed, {
+          service:      'sqs',
+          region:       argv.region,
+          resource:     argv.config['dead-letter'],
+        })));
+      }
       else if (0 === argv.config['dead-letter'].indexOf('arn:')) {
         next(null, argv.config['dead-letter']);
       }
