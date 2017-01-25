@@ -2,6 +2,7 @@
 
 const path = require('path');
 const createServer = require('lambda-emulator');
+const createHandler = require('../lib/handler.js');
 
 const exampleEvalHandler = function(event, context, callback) { callback(null, { hello: 'world' }); };
 
@@ -18,7 +19,7 @@ exports.builder = {
     describe:       `Mainly for dev. Pass a lambda handler as a string e.g.:\n(${exampleEvalHandler.toString()})`,
   },
 };
-exports.handler = function(argv, done) {
+exports.handler = createHandler(function(argv, done) {
   let lambdaHandler;
   if (argv.eval) {
     try {
@@ -36,4 +37,4 @@ exports.handler = function(argv, done) {
   }
   createServer(lambdaHandler, argv.type);
   done(null);
-};
+});

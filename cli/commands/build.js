@@ -10,6 +10,7 @@ const json        = require('rollup-plugin-json');
 const analyzer    = require('rollup-analyzer');
 const builtins    = require('builtin-modules');
 
+const createHandler = require('../lib/handler.js');
 
 let cache;
 
@@ -54,7 +55,7 @@ exports.builder = {
   // },
 };
 
-exports.handler = (argv, done) => {
+exports.handler = createHandler((argv, done) => {
   console.log('Build started...');
   let defaultRollupOptions = {
     entry:              path.join(process.cwd(), argv.source || 'src/main.js'),
@@ -96,4 +97,4 @@ exports.handler = (argv, done) => {
     }
     done(null);
   }, done);
-};
+});

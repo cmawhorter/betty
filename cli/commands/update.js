@@ -7,6 +7,7 @@ const AWS           = require('aws-sdk');
 const archiver      = require('archiver');
 const waterfall     = require('waterfall');
 const arn           = require('../../common/arn.js');
+const createHandler = require('../lib/handler.js');
 
 exports.command = 'update';
 exports.desc    = 'Uploads the contents of dist to lambda as a new function version';
@@ -93,7 +94,7 @@ function getExistingFunction(lambda, FunctionName, next) {
   lambda.getFunctionConfiguration(params, (err, data) => next(null, err ? false : data));
 }
 
-exports.handler = (argv, done) => {
+exports.handler = createHandler((argv, done) => {
   console.log('Update started...');
   let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
   if (argv.test) {
@@ -170,4 +171,4 @@ exports.handler = (argv, done) => {
     console.log('Update completed successfully');
     done(null);
   });
-};
+});
