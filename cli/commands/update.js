@@ -6,6 +6,7 @@ const streamBuffers = require('stream-buffers');
 const AWS           = require('aws-sdk');
 const archiver      = require('archiver');
 const waterfall     = require('waterfall');
+const arn           = require('../../common/arn.js');
 
 exports.command = 'update';
 exports.desc    = 'Uploads the contents of dist to lambda as a new function version';
@@ -47,24 +48,26 @@ function addCodeParams(params, bufferCode) {
   });
 }
 
-function addConfigParams(params, role, config) {
+function addConfigParams(params, role, deadLetterArn, config) {
   config = config || {};
   Object.assign(params, {
-    FunctionName:   config.name,
-    Description:    config.description || '',
-    Handler:        config.entry || 'index.handler',
-    MemorySize:     config.memory || 128,
-    Role:           role,
-    Runtime:        config.runtime || 'nodejs4.3',
-    Timeout:        config.timeout || 15,
+    FunctionName:       config.name,
+    Description:        config.description || '',
+    Handler:            config.entry || 'index.handler',
+    MemorySize:         config.memory || 128,
+    Role:               role,
+    Runtime:            config.runtime || 'nodejs4.3',
+    Timeout:            config.timeout || 15,
+    DeadLetterConfig:   deadLetterArn ? { TargetArn: deadLetterArn } : null,
     // VpcConfig: {},
-    Environment:    config.environment ? { Variables: config.environment } : null,
+    Environment:        config.environment ? { Variables: config.environment } : null,
   });
 }
 
-function createFunction(lambda, role, config, bufferCode, next) {
+function createFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
   let params = {};
-  addConfigParams(params, role, config);
+  addConfigParams(params, role, deadLetterArn, config);
+  console.log('config params', params);
   addCodeParams(params, bufferCode);
   params.Code = {
     ZipFile:        bufferCode,
@@ -72,9 +75,10 @@ function createFunction(lambda, role, config, bufferCode, next) {
   lambda.createFunction(params, next);
 }
 
-function updateFunction(lambda, role, config, bufferCode, next) {
+function updateFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
   let configParams = {};
-  addConfigParams(configParams, role, config);
+  addConfigParams(configParams, role, deadLetterArn, config);
+  console.log('config params', configParams);
   lambda.updateFunctionConfiguration(configParams, (err, data) => {
     if (err) return next(err);
     let codeParams = { FunctionName: configParams.FunctionName };
@@ -114,6 +118,19 @@ exports.handler = (argv, done) => {
         expandRelativeRole(iam, argv.config.role, next);
       }
     },
+    deadLetterArn: (state, next) => {
+      if (!argv.config['dead-letter']) return next(null, null);
+      if (true === argv.config['dead-letter']) {
+        let parsed = arn.parse(state.role);
+        next(null, arn.format(Object.assign(parsed, { service: 'sqs', resource: `lambda-dlq-${argv.config.name}` })));
+      }
+      else if (0 === argv.config['dead-letter'].indexOf('arn:')) {
+        next(null, argv.config['dead-letter']);
+      }
+      else {
+        next(new Error('invalid dead letter option'));
+      }
+    },
     bundle: (state, next) => {
       console.log('\t-> Bundling');
       createCodeBundle(dist, next);
@@ -125,11 +142,11 @@ exports.handler = (argv, done) => {
     update: (state, next) => {
       if (state.exists) {
         console.log('\t-> Updating');
-        updateFunction(lambda, state.role, argv.config, state.bundle, next);
+        updateFunction(lambda, state.role, state.deadLetterArn, argv.config, state.bundle, next);
       }
       else {
         console.log('\t-> Creating');
-        createFunction(lambda, state.role, argv.config, state.bundle, next);
+        createFunction(lambda, state.role, state.deadLetterArn, argv.config, state.bundle, next);
       }
     },
   }, (err, state) => {

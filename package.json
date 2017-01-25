@@ -36,6 +36,7 @@
     "rollup-plugin-json": "^2.1.0",
     "rollup-plugin-node-resolve": "^2.0.0",
     "stream-buffers": "^3.0.1",
+    "urn": "github:cmawhorter/urn",
     "waterfall": "github:cmawhorter/waterfall#1.0.0",
     "yargs": "^6.6.0"
   },
