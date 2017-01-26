@@ -1,8 +1,0 @@
-{
-  "$schema": "",
-  "type": "object",
-  "properties": {
-    "component": "",
-    "service": ""
-  }
-}
