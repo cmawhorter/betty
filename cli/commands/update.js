@@ -6,30 +6,21 @@ const streamBuffers = require('stream-buffers');
 const AWS           = require('aws-sdk');
 const archiver      = require('archiver');
 const waterfall     = require('waterfall');
+const async         = require('async');
 const arn           = require('../../common/arn.js');
+const roles         = require('../../common/roles.js');
+const policies      = require('../../common/policies.js');
 const createHandler = require('../lib/handler.js');
 
 exports.command = 'update';
 exports.desc    = 'Uploads the contents of dist to lambda as a new function version';
 exports.builder = {
-  region: {
-    describe:       'AWS region to deploy to. Defaults to $AWS_REGION',
-    default:        process.env.AWS_REGION,
-  },
   test: {
     describe:       'Outputs bundled code to build directory and does not contact AWS',
     boolean:        true,
     default:        false,
   },
 };
-
-function expandRelativeRole(iam, roleName, next) {
-  let params = { RoleName: roleName };
-  iam.getRole(params, (err, data) => {
-    if (err) return next(err);
-    next(null, data.Role.Arn);
-  });
-}
 
 function createCodeBundle(dist, next) {
   let output = new streamBuffers.WritableStreamBuffer();
@@ -95,80 +86,111 @@ function getExistingFunction(lambda, FunctionName, next) {
 }
 
 exports.handler = createHandler((argv, done) => {
-  console.log('Update started...');
+  global.log.info({ region: global.BETTY.aws.region }, 'update started');
+  global.log.debug({ argv }, 'arguments');
   let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
   if (argv.test) {
     createCodeBundle(dist, (err, bufferCode) => {
       if (err) throw err;
       let bundleZip = path.join(dist, 'bundle.zip');
       fs.writeFileSync(bundleZip, bufferCode);
-      console.log('Done.  Created ', bundleZip);
     });
+    global.log.info({ destination: bundleZip }, 'test bundle created');
     return;
   }
-  let lambda = new AWS.Lambda({ region: argv.region });
+  let lambda = new AWS.Lambda({ region: global.BETTY.aws.region });
   waterfall({
     role: (state, next) => {
-      if (!argv.config.role) return next(new Error('IAM role required'));
-      if (0 === argv.config.role.indexOf('arn:')) {
-        next(null, argv.config.role);
-      }
-      else {
-        console.log('\t-> Expanding relative role');
-        let iam = new AWS.IAM({ region: argv.region });
-        expandRelativeRole(iam, argv.config.role, next);
-      }
+      global.log.debug('starting role');
+      roles.createLambdaRole(global.config.name, (err, data) => {
+        if (err) return next(err);
+        global.log.debug({ role: data.Role }, 'got role');
+        next(null, data.Role.Arn);
+      });
     },
-    deadLetterArn: (state, next) => {
-      if (!argv.config['dead-letter']) return next(null, null);
-      if (true === argv.config['dead-letter']) {
-        let parsed = arn.parse(state.role);
-        next(null, arn.format(Object.assign(parsed, {
-          service:      'sqs',
-          region:       argv.region,
-          resource:     `lambda-dlq-${argv.config.name}`,
-        })));
-      }
-      else if (typeof argv.config['dead-letter'] === 'string') {
-        let parsed = arn.parse(state.role);
-        next(null, arn.format(Object.assign(parsed, {
-          service:      'sqs',
-          region:       argv.region,
-          resource:     argv.config['dead-letter'],
-        })));
-      }
-      else if (0 === argv.config['dead-letter'].indexOf('arn:')) {
-        next(null, argv.config['dead-letter']);
-      }
-      else {
-        next(new Error('invalid dead letter option'));
-      }
+    attachPolicies: function(state, next) {
+      global.log.debug({ assets: global.config.assets, resources: Object.keys(global.config.resources) }, 'attaching policies');
+      let inlineAssetPolicies = (global.config.assets || []).map(asset => {
+        return (done) => {
+          let policyName      = policies.nameFromAsset('asset', asset);
+          let policyDocument  = policies.documentFromAsset(asset);
+          global.log.trace({ name: policyName, document: policyDocument }, 'attaching inline policy');
+          roles.attachInlinePolicy(global.config.name, policyName, policyDocument, done);
+        };
+      });
+      let dependentResourcePolicies = Object.keys(global.config.resources || {}).map(resourceName => {
+        return (done) => {
+          let policyArn = policies.createManagedPolicyArnForResource(resourceName);
+          global.log.trace({ arn: policyArn }, 'attaching managed policy');
+          roles.attachManagedPolicy(global.config.name, policyArn, done);
+        };
+      });
+      async.parallel([
+        (done) => {
+          global.log.trace('attaching default lambda policy');
+          roles.attachAwsLambdaBasicExecutionRole(global.config.name, done);
+        },
+      ].concat(inlineAssetPolicies, dependentResourcePolicies), next);
     },
+    publishManagedPolicy: function(state, next) {
+      let policyDocument = policies.documentFromAssets(global.config.policy || []);
+      global.log.debug({ document: policyDocument }, 'publishing managed policy for downstream');
+      policies.createManagedPolicy(global.config.name, policyDocument, next);
+    },
+    // deadLetterArn: (state, next) => {
+    //   if (!argv.config['dead-letter']) return next(null, null);
+    //   if (true === argv.config['dead-letter']) {
+    //     let parsed = arn.parse(state.role);
+    //     next(null, arn.format(Object.assign(parsed, {
+    //       service:      'sqs',
+    //       region:       global.BETTY.aws.region,
+    //       resource:     `lambda-dlq-${argv.config.name}`,
+    //     })));
+    //   }
+    //   else if (typeof argv.config['dead-letter'] === 'string') {
+    //     let parsed = arn.parse(state.role);
+    //     next(null, arn.format(Object.assign(parsed, {
+    //       service:      'sqs',
+    //       region:       global.BETTY.aws.region,
+    //       resource:     argv.config['dead-letter'],
+    //     })));
+    //   }
+    //   else if (0 === argv.config['dead-letter'].indexOf('arn:')) {
+    //     next(null, argv.config['dead-letter']);
+    //   }
+    //   else {
+    //     next(new Error('invalid dead letter option'));
+    //   }
+    // },
     bundle: (state, next) => {
-      console.log('\t-> Bundling');
-      createCodeBundle(dist, next);
+      global.log.debug('starting bundle');
+      createCodeBundle(dist, (err, bufferCode) => {
+        if (err) return next(err);
+        global.log.debug({ size: bufferCode.byteLength }, 'bundle created');
+        next(null, bufferCode);
+      });
     },
     exists: (state, next) => {
-      console.log('\t-> Checking if new');
-      getExistingFunction(lambda, argv.config.name, next);
+      global.log.debug('checking if function exists');
+      getExistingFunction(lambda, global.config.name, next);
     },
     update: (state, next) => {
       if (state.exists) {
-        console.log('\t-> Updating');
-        updateFunction(lambda, state.role, state.deadLetterArn, argv.config, state.bundle, next);
+        global.log.info('updating existing function');
+        updateFunction(lambda, state.role, null, global.config, state.bundle, next);
       }
       else {
-        console.log('\t-> Creating');
-        createFunction(lambda, state.role, state.deadLetterArn, argv.config, state.bundle, next);
+        global.log.info('creating new function');
+        createFunction(lambda, state.role, null, global.config, state.bundle, next);
       }
     },
   }, (err, state) => {
     if (err) {
-      console.log('Update completed with error');
-      console.log(err.stack || err);
+      global.log.error(err);
       return done(err);
     }
-    console.log('Update completed successfully');
+    global.log.info('update complete');
+    global.log.debug(Object.assign({}, state, { bundle: '[redacted]' }), 'final state');
     done(null);
   });
 });

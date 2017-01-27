@@ -87,9 +87,6 @@
     "manage": {
       "type":               "string"
     },
-    "readme": {
-      "type":               "string"
-    },
     "keywords": {
       "type":               "array",
       "items": {
@@ -133,6 +130,19 @@
       "type":               "object",
       "required":           [ "service", "name", "permissions" ],
       "properties": {
+        "region": {
+          "oneOf": [
+            {
+              "type":       "array",
+              "items": {
+                "$ref":     "#/definitions/identifier"
+              }
+            },
+            {
+              "$ref":       "#/definitions/identifier"
+            }
+          ]
+        },
         "service": {
           "$ref":           "#/definitions/identifier"
         },

@@ -2,30 +2,16 @@
 'use strict';
 
 process.title = 'betty';
+require('../common/env.js');
 
-const assert          = require('assert');
-const yargs           = require('yargs');
-const composeCommands = require('./lib/compose.js');
-const parseConfigFile = require('../common/parse-config-file.js');
+const resource      = require('../common/resource.js');
+const getAccountId  = require('../common/account-id.js');
 
-const cmds = require('require-dir')('./commands/');
-// make sure filename and command match
-Object.keys(cmds).forEach(commandId => assert.strictEqual(commandId, cmds[commandId].command));
-
-module.exports = yargs
-  .option('config', {
-    global:     true,
-    alias:      'c',
-    desc:       'Betty project config project.json or json string',
-    default:    'project.json',
-    coerce:     parseConfigFile,
-  })
-  .command(cmds.build)
-  .command(cmds.info)
-  .command(cmds.logs)
-  .command(cmds.serve)
-  .command(cmds.update)
-  .command(composeCommands('deploy', [ cmds.build, cmds.update ]))
-  .help('h')
-  .alias('h', 'help')
-  .argv;
+// before processing command, get the account id associated with the current user
+// to be best-practice used in naming things like s3 buckets
+getAccountId((err, accountId) => {
+  if (err) throw err;
+  global.BETTY.aws.accountId = accountId;
+  global.config = resource.load(process.cwd(), 'resource');
+  require('./cli.js');
+});

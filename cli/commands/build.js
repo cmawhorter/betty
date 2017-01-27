@@ -56,7 +56,8 @@ exports.builder = {
 };
 
 exports.handler = createHandler((argv, done) => {
-  console.log('Build started...');
+  global.log.info('build started');
+  global.log.debug({ argv }, 'arguments');
   let defaultRollupOptions = {
     entry:              path.join(process.cwd(), argv.source || 'src/main.js'),
     cache:              cache,
@@ -82,7 +83,7 @@ exports.handler = createHandler((argv, done) => {
     external:           [].concat([ 'aws-sdk', require.resolve('aws-sdk') ], argv.builtins ? builtins : [], argv.external || []),
   };
   let buildConfig = argv.rollup || defaultRollupOptions;
-  argv.verbose && console.log('Build Config: ', JSON.stringify(buildConfig, null, 2));
+  global.log.debug({ rollup: buildConfig }, 'build config');
   rollup.rollup(buildConfig).then(bundle => {
     cache = bundle; // build doesn't watch so this isn't used
     bundle.write({
@@ -90,7 +91,7 @@ exports.handler = createHandler((argv, done) => {
       sourceMap:    true,
       dest:         argv.main || 'dist/index.js',
     });
-    console.log('Build completed.');
+    global.log.info('build complete');
     if (argv.analyze) {
       console.log('\n\n');
       analyzer.formatted(bundle).then(console.log).catch(console.error);

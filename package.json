@@ -21,9 +21,12 @@
   "dependencies": {
     "ajv": "^4.11.2",
     "archiver": "^1.3.0",
+    "async": "^2.1.4",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-es2015": "^6.22.0",
     "builtin-modules": "^1.1.1",
+    "bunyan": "^1.8.5",
+    "bunyan-prettystream": "^0.1.3",
     "deep-assign": "^2.0.0",
     "lambda-emulator": "github:cmawhorter/lambda-emulator",
     "mkdirp": "^0.5.1",

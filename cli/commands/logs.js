@@ -25,7 +25,7 @@ exports.handler = createHandler((argv, done) => {
   const cmdArgs = [
     `-p${argv.profile}`,
     `-f`,
-    `/aws/lambda/${argv.n || argv.config.name}`
+    `/aws/lambda/${argv.n || global.config.name}`
   ];
   process.env.AWS_REGION = argv.region;
   const pbcw = spawn(cmd, cmdArgs, {
