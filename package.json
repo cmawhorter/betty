@@ -31,6 +31,7 @@
     "lambda-emulator": "github:cmawhorter/lambda-emulator",
     "mkdirp": "^0.5.1",
     "pbcw": "github:stampr/pretty-bunyan-cloudwatch-logs#1.0.0",
+    "rc": "^1.1.6",
     "require-dir": "^0.3.1",
     "rollup": "^0.41.4",
     "rollup-analyzer": "^1.0.1",
