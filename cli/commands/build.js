@@ -67,6 +67,7 @@ function npmInstall(target) {
 exports.handler = createHandler((argv, done) => {
   global.log.info('build started');
   global.log.debug({ argv }, 'arguments');
+  let unbundledKeys = Object.keys(global.config.configuration.unbundled || {});
   let defaultRollupOptions = {
     entry:              path.join(process.cwd(), argv.source || 'src/main.js'),
     cache:              cache,
@@ -89,7 +90,7 @@ exports.handler = createHandler((argv, done) => {
         plugins:        [ 'external-helpers' ],
       }),
     ],
-    external:           [].concat([ 'aws-sdk' ], builtins, global.config.configuration.unbundled || []),
+    external:           [].concat([ 'aws-sdk' ], builtins, unbundledKeys),
   };
   let buildConfig = argv.rollup || defaultRollupOptions;
   global.log.debug({ rollup: buildConfig }, 'build config');
@@ -100,7 +101,7 @@ exports.handler = createHandler((argv, done) => {
       sourceMap:    true,
       dest:         argv.main || 'dist/index.js',
     });
-    if (global.config.configuration.unbundled) {
+    if (unbundledKeys.length) {
       let target = path.dirname(path.resolve(argv.main || 'dist/index.js'));
       writePackageJson(target);
       npmInstall(target);
