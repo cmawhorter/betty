@@ -4,6 +4,7 @@ const waterfall   = require('waterfall');
 const iam         = require('./iam.js');
 const arn         = require('./arn.js');
 
+const maxManagedPolicyVersions  = 5;
 const resourceManagedPolicyPath = '/resource/';
 
 // builds a policy document from a list of standard asset objects
@@ -36,6 +37,29 @@ const policies = module.exports = {
     });
   },
 
+  _deleteOldestVersion: function(policyArn, versions, callback) {
+    let oldestVersionId;
+    let oldestVersionTimestamp = null;
+    for (let i=0; i < versions.length; i++) {
+      let version     = versions[i];
+      let versionDate = new Date(version.CreateDate).getTime();
+      global.log.trace({ version, versionDate, oldestVersionTimestamp, isOlder: versionDate < oldestVersionTimestamp }, 'checking if older version');
+      if (null === oldestVersionTimestamp || versionDate < oldestVersionTimestamp) {
+        global.log.trace({ version, versionDate }, 'new oldest found');
+        oldestVersionId         = version.VersionId;
+        oldestVersionTimestamp  = versionDate;
+      }
+    }
+    global.log.trace({ versions, oldestVersionId, oldestVersionTimestamp }, 'deleting oldest policy version');
+    policies.deleteManagedPolicyVersion(policyArn, oldestVersionId, (err) => {
+      if (err) {
+        global.log.error({ err }, 'error deleting oldest policy');
+        return callback(err);
+      }
+      callback(null);
+    });
+  },
+
   _createManagedPolicy: function(name, description, document, callback) {
     let params = {
       PolicyName:       name,
@@ -47,12 +71,42 @@ const policies = module.exports = {
   },
 
   _updateManagedPolicy: function(policyArn, document, callback) {
+    let update = (err) => {
+      if (err) return callback(err);
+      let params = {
+        PolicyArn:        policyArn,
+        PolicyDocument:   JSON.stringify(document, null, 2),
+        SetAsDefault:     true,
+      };
+      iam.createPolicyVersion(params, callback);
+    };
+    policies.listManagedPolicyVersions(policyArn, (err, data) => {
+      if (err) {
+        global.log.warn({ err }, 'unable to check existing versions');
+      }
+      let versions = data.Versions || [];
+      if (versions.length >= maxManagedPolicyVersions) {
+        policies._deleteOldestVersion(policyArn, versions, update);
+      }
+      else {
+        update();
+      }
+    });
+  },
+
+  deleteManagedPolicyVersion: function(policyArn, versionId, callback) {
     let params = {
       PolicyArn:        policyArn,
-      PolicyDocument:   JSON.stringify(document, null, 2),
-      SetAsDefault:     true,
+      VersionId:        versionId,
     };
-    iam.createPolicyVersion(params, callback);
+    iam.deletePolicyVersion(params, callback);
+  },
+
+  listManagedPolicyVersions: function(policyArn, callback) {
+    let params = {
+      PolicyArn:        policyArn,
+    };
+    iam.listPolicyVersions(params, callback);
   },
 
   getPolicy: function(policyArn, callback) {

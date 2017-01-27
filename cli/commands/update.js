@@ -40,25 +40,25 @@ function addCodeParams(params, bufferCode) {
   });
 }
 
-function addConfigParams(params, role, deadLetterArn, config) {
+function addConfigParams(params, role, deadLetterArn, config, settings) {
   config = config || {};
   Object.assign(params, {
     FunctionName:       config.name,
     Description:        config.description || '',
-    Handler:            config.entry || 'index.handler',
-    MemorySize:         config.memory || 128,
+    Handler:            settings.entry || 'index.handler',
+    MemorySize:         settings.memory || 128,
     Role:               role,
-    Runtime:            config.runtime || 'nodejs4.3',
-    Timeout:            config.timeout || 15,
+    Runtime:            settings.runtime || 'nodejs4.3',
+    Timeout:            settings.timeout || 15,
     DeadLetterConfig:   deadLetterArn ? { TargetArn: deadLetterArn } : null,
     // VpcConfig: {},
-    Environment:        config.environment ? { Variables: config.environment } : null,
+    Environment:        settings.environment ? { Variables: settings.environment } : null,
   });
 }
 
 function createFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
   let params = {};
-  addConfigParams(params, role, deadLetterArn, config);
+  addConfigParams(params, role, deadLetterArn, config, config.configuration);
   console.log('config params', params);
   addCodeParams(params, bufferCode);
   params.Code = {
@@ -69,7 +69,7 @@ function createFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
 
 function updateFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
   let configParams = {};
-  addConfigParams(configParams, role, deadLetterArn, config);
+  addConfigParams(configParams, role, deadLetterArn, config, config.configuration);
   console.log('config params', configParams);
   lambda.updateFunctionConfiguration(configParams, (err, data) => {
     if (err) return next(err);
@@ -87,7 +87,7 @@ function getExistingFunction(lambda, FunctionName, next) {
 
 exports.handler = createHandler((argv, done) => {
   global.log.info({ region: global.BETTY.aws.region }, 'update started');
-  global.log.debug({ argv }, 'arguments');
+  global.log.debug({ argv, config: global.config }, 'settings');
   let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
   if (argv.test) {
     createCodeBundle(dist, (err, bufferCode) => {
