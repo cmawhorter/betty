@@ -86,7 +86,7 @@ function getExistingFunction(lambda, FunctionName, next) {
 }
 
 exports.handler = createHandler((argv, done) => {
-  global.log.info({ region: global.BETTY.aws.region }, 'update started');
+  global.log.info({ region: global.betty.aws.region }, 'update started');
   global.log.debug({ argv, config: global.config }, 'settings');
   let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
   if (argv.test) {
@@ -98,7 +98,7 @@ exports.handler = createHandler((argv, done) => {
     global.log.info({ destination: bundleZip }, 'test bundle created');
     return;
   }
-  let lambda = new AWS.Lambda({ region: global.BETTY.aws.region });
+  let lambda = new AWS.Lambda({ region: global.betty.aws.region });
   waterfall({
     role: (state, next) => {
       global.log.debug('starting role');
@@ -143,7 +143,7 @@ exports.handler = createHandler((argv, done) => {
     //     let parsed = arn.parse(state.role);
     //     next(null, arn.format(Object.assign(parsed, {
     //       service:      'sqs',
-    //       region:       global.BETTY.aws.region,
+    //       region:       global.betty.aws.region,
     //       resource:     `lambda-dlq-${argv.config.name}`,
     //     })));
     //   }
@@ -151,7 +151,7 @@ exports.handler = createHandler((argv, done) => {
     //     let parsed = arn.parse(state.role);
     //     next(null, arn.format(Object.assign(parsed, {
     //       service:      'sqs',
-    //       region:       global.BETTY.aws.region,
+    //       region:       global.betty.aws.region,
     //       resource:     argv.config['dead-letter'],
     //     })));
     //   }

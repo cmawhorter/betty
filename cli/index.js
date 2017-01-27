@@ -8,11 +8,11 @@ const resource      = require('../common/resource.js');
 const getAccountId  = require('../common/account-id.js');
 
 const boot = () => {
-  global.config = resource.load(process.cwd(), 'resource');
+  resource.load();
   require('./cli.js');
 };
 
-if (global.BETTY.aws.accountId) {
+if (global.betty.aws.accountId) {
   boot();
 }
 else {
@@ -20,7 +20,7 @@ else {
   // to be best-practice used in naming things like s3 buckets
   getAccountId((err, accountId) => {
     if (err) throw err;
-    global.BETTY.aws.accountId = accountId;
+    global.betty.aws.accountId = accountId;
     boot();
   });
 }

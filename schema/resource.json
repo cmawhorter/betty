@@ -1,7 +1,7 @@
 {
   "$schema":                "http://json-schema.org/draft-04/schema#",
   "type":                   "object",
-  "required":               [ "name", "version" ],
+  "required":               [ "name" ],
   "properties": {
     "universe": {
       "$ref":               "#/definitions/identifier"
@@ -20,13 +20,11 @@
       ]
     },
     "name": {
-      "$ref":               "#/definitions/identifier"
+      "$ref":               "#/definitions/identifier",
+      "maxLength":          64
     },
     "description": {
       "type":               "string"
-    },
-    "version": {
-      "$ref":               "#/definitions/version"
     },
     "repository": {
       "type":               [ "object", "string" ],

@@ -1,27 +1,28 @@
 'use strict';
 
-const path = require('path');
-const spawn = require('child_process').spawn;
+const path          = require('path');
+const spawn         = require('child_process').spawn;
 const createHandler = require('../lib/handler.js');
 
 exports.command = 'logs';
 exports.desc    = 'Streams the cloudwatch log for the function';
 exports.builder = {
   region: {
-    describe:       'AWS region to target. Defaults to $AWS_REGION',
-    default:        process.env.AWS_REGION,
+    describe:       'AWS region to target',
+    default:        global.betty.aws.region,
   },
   profile: {
-    describe:       'AWS credentials profile to target. Defaults to $AWS_PROFILE',
-    default:        process.env.AWS_PROFILE,
+    describe:       'AWS credentials profile to target',
+    default:        global.betty.aws.profile,
   },
   name: {
     alias:          'n',
-    describe:       'The CloudWatch log name.  Defaults to the project.name',
+    describe:       'The CloudWatch log name.',
+    default:        global.config.name,
   },
 };
 exports.handler = createHandler((argv, done) => {
-  const cmd = path.join(process.cwd(), './node_modules/.bin', 'pbcw');
+  const cmd     = path.join(global.betty.utils.cwd, './node_modules/.bin', 'pbcw');
   const cmdArgs = [
     `-p${argv.profile}`,
     `-f`,
@@ -30,7 +31,7 @@ exports.handler = createHandler((argv, done) => {
   process.env.AWS_REGION = argv.region;
   const pbcw = spawn(cmd, cmdArgs, {
     stdio:          'inherit',
-    cwd:            process.cwd(),
+    cwd:            global.betty.utils.cwd,
   });
   done(null);
 });

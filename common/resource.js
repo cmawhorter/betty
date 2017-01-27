@@ -1,33 +1,60 @@
 'use strict';
 
 const path        = require('path');
-const Ajv         = require('ajv');
+const fs          = require('fs');
 
+const schema      = require('./schema.js');
 const arn         = require('./arn.js');
 const tryLoad     = require('./try-load.js');
 
-const $schema     = require('../schema/resource.json');
-
-const ajv         = new Ajv();
-const validate    = ajv.compile($schema);
+const rootName = 'resource';
 
 const resource = module.exports = {
-  load: function(cwd, rootName) {
-    rootName = rootName || 'resource';
+  load: function() {
+    let cwd = global.betty.utils.cwd;
     let jsVersion = path.join(cwd, `${rootName}.js`);
     let jsonVersion = path.join(cwd, `${rootName}.json`);
-    let config = tryLoad.js(jsVersion) || tryLoad.json(jsonVersion);
+    let resources = path.join(cwd, `resources.json`);
+    let resourceJs = tryLoad.js(jsVersion);
+    let resourceJson = tryLoad.json(jsonVersion);
+    let config =  resourceJs || resourceJson;
+    if (resourceJs) {
+      global.config_type = 'js';
+    }
+    else if (resourceJs) {
+      global.config_type = 'json';
+    }
     if (config) {
+      config.resources = Object.assign(config.resources || {}, tryLoad.json(resources) || {});
       resource.validate(config);
     }
     else {
       global.log.debug({ locations: [ jsVersion, jsonVersion ] }, 'could not load resource config');
     }
-    return config;
+    global.config = config;
+  },
+
+  writeResources: function() {
+    let cwd = global.betty.utils.cwd;
+    let target;
+    let json;
+    switch (global.config_type) {
+      case 'js':
+        target = path.join(cwd, `resources.json`);
+        json = global.config.resources;
+      break;
+      case 'json':
+        target = path.join(cwd, `resource.json`);
+        json = global.config;
+      break;
+    }
+    if (target && json) {
+      fs.writeFileSync(target, JSON.stringify(json, null, 2));
+    }
   },
 
   validate: function(data) {
-    let valid = validate(data);
+    let valid = schema.validate('resource', data);
     if (!valid) {
       let err = new Error('validation failed');
       console.log(validate.errors);
@@ -36,5 +63,4 @@ const resource = module.exports = {
     }
     return valid;
   },
-
 };

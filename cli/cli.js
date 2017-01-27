@@ -8,12 +8,14 @@ const composeCommands = require('./lib/compose.js');
 
 const cmds = require('require-dir')('./commands/');
 // make sure filename and command match
-Object.keys(cmds).forEach(commandId => assert.strictEqual(commandId, cmds[commandId].command));
+Object.keys(cmds).forEach(commandId => assert.strictEqual(commandId, cmds[commandId].command.split(' ')[0]));
 
 module.exports = yargs
   .command(cmds.build)
   .command(cmds.info)
   .command(cmds.logs)
+  .command(cmds.publish)
+  .command(cmds.registry)
   .command(cmds.serve)
   .command(cmds.update)
   .command(composeCommands('deploy', [ cmds.build, cmds.update ]))

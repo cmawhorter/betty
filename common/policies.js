@@ -124,7 +124,7 @@ const policies = module.exports = {
   createManagedPolicyArnForResource: function(name) {
     let policyArn = arn.make({
       service:    'iam',
-      account:    global.BETTY.aws.accountId,
+      account:    global.betty.aws.accountId,
       resource:   `policy${resourceManagedPolicyPath}${name}`,
     });
     return policyArn;
@@ -152,7 +152,7 @@ const policies = module.exports = {
       regions = Array.isArray(asset.region) ? asset.region : [ asset.region ];
     }
     else {
-      regions = [ global.BETTY.aws.region ];
+      regions = [ global.betty.aws.region ];
     }
     return {
       Effect:   'Allow',
@@ -161,7 +161,7 @@ const policies = module.exports = {
         let resource =  arn.make({
           region:   region,
           service:  asset.service,
-          account:  global.BETTY.aws.accountId,
+          account:  global.betty.aws.accountId,
           resource: asset.name,
         });
         return resource;

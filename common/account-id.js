@@ -1,7 +1,7 @@
 'use strict';
 
 var AWS = require('aws-sdk');
-var sts = new AWS.STS({ region: global.BETTY.aws.region });
+var sts = new AWS.STS({ region: global.betty.aws.region });
 
 module.exports = function(callback) {
   sts.getCallerIdentity({}, (err, data) => {

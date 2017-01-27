@@ -32,7 +32,7 @@ const roles = module.exports = {
     let path = '/resource/';
     let policyArn = arn.make({
       service:    'iam',
-      account:    global.BETTY.aws.accountId,
+      account:    global.betty.aws.accountId,
       resource:   `role${path}${name}`,
     });
     roles.getRole(name, (err, data) => {
