@@ -131,7 +131,8 @@ const policies = module.exports = {
   },
 
   nameFromAsset: function(namePrefix, asset) {
-    return `${namePrefix}-${asset.service}-${asset.name}`;
+    let name = asset.name.split(/[^\w\d-]/)[0];
+    return `${namePrefix}-${asset.service}-${name}`;
   },
 
   documentFromAsset: function(asset) {
