@@ -27,6 +27,7 @@ const resource = module.exports = {
     if (config) {
       config.resources = Object.assign(config.resources || {}, tryLoad.json(resources) || {});
       config.configuration = config.configuration || {};
+      config.build = config.build || {};
       resource.validate(config);
     }
     else {

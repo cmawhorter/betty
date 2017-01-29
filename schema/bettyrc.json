@@ -23,6 +23,19 @@
         }
       }
     },
+    "build": {
+      "type":               "object",
+      "properties": {
+        "unbundled": {
+          "type":           "object",
+          "patternProperties": {
+            ".+": {
+              "type":       "string"
+            }
+          }
+        }
+      }
+    },
     "registry": {
       "type":               [ "object", "null" ],
       "required":           [ "command" ],
