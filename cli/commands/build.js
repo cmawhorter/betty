@@ -97,19 +97,21 @@ exports.handler = createHandler((argv, done) => {
   };
   let buildConfig = argv.rollup || defaultRollupOptions;
   global.log.debug({ rollup: buildConfig }, 'build config');
+  global.log.info('starting rollup');
   rollup.rollup(buildConfig).then(bundle => {
     cache = bundle; // build doesn't watch so this isn't used
-    bundle.write({
+    global.log.info('build complete');
+    let outputConfig = {
       format:       'cjs',
       sourceMap:    true,
       dest:         argv.main || 'dist/index.js',
-    });
-    global.log.info('build complete');
+    };
+    bundle.write(outputConfig);
+    global.log.debug({ config: outputConfig }, 'output written');
     if (argv.analyze) {
       console.log('\n\n');
       analyzer.formatted(bundle).then(console.log).catch(console.error);
     }
-
     if (unbundledKeys.length) {
       global.log.debug({ keys: unbundledKeys }, 'processing unbundled');
       let target = path.dirname(path.resolve(argv.main || 'dist/index.js'));
@@ -117,7 +119,6 @@ exports.handler = createHandler((argv, done) => {
       npmInstall(target);
       removeExternal(target, [ 'aws-sdk' ]);
     }
-
     done(null);
   }, done);
 });
