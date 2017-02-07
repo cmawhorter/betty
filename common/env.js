@@ -15,6 +15,7 @@ global.betty = global.BETTY = require('rc')('betty', {
     region:           process.env.AWS_REGION || null,
   },
   registry:           null,
+  build:              {},
 });
 
 // because aws-sdk is an amazing piece of software
