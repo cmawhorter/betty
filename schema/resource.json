@@ -118,6 +118,11 @@
       "minLength":          1,
       "pattern":            "^[\\w\\d][\\w\\d-]*$"
     },
+    "identifier_with_wildcards": {
+      "type":               "string",
+      "minLength":          1,
+      "pattern":            "^([\\w\\d][\\w\\d\\*-]*|\\*)$"
+    },
     "version": {
       "type":               "string",
       "minLength":          1,
@@ -145,9 +150,7 @@
           "$ref":           "#/definitions/identifier"
         },
         "name": {
-          "type":           "string",
-          "minLength":      1,
-          "pattern":        "^[\\w\\d].*$"
+          "$ref":           "#/definitions/identifier_with_wildcards"
         },
         "permissions": {
           "type":           "array",
