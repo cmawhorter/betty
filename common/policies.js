@@ -131,7 +131,13 @@ const policies = module.exports = {
   },
 
   nameFromAsset: function(namePrefix, asset) {
-    let name = asset.name.split(/[^\w\d-]/)[0];
+    let name = (asset.name.split(/[^\w\d-]/)[0] || '').trim();
+    if (!name.length) { // might be "service": "*"
+      name = asset.name.replace(/\*/g, 'wildcard').replace(/[^\w\d]/g, '').trim();
+    }
+    if (!name.length) { // if that fails, just repeat service
+      name = asset.service;
+    }
     return `${namePrefix}-${asset.service}-${name}`;
   },
 
