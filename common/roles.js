@@ -43,10 +43,10 @@ const roles = module.exports = {
           AssumeRolePolicyDocument:   JSON.stringify(document, null, 2),
           Path:                       path || null,
         };
-        iam.createRole(params, callback);
+        iam.createRole(params, (err, data) => callback(err, data, true));
       }
       else {
-        callback(null, data);
+        callback(null, data, false);
       }
     });
   },
