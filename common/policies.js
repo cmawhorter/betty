@@ -134,7 +134,7 @@ const policies = module.exports = {
   },
 
   nameFromAsset: function(namePrefix, asset) {
-    let name = slug((asset.name.split(/[^\w\d-]/)[0] || '').trim().replace(/\//g, '-').replace(/\*/g, '_star'));
+    let name = slug((asset.name || '').trim().replace(/\//g, '-').replace(/\*/g, 'wildcard'));
     let combined = `${namePrefix}-${asset.service}-${name}`;
     global.log.trace({ namePrefix, asset, name, combined }, 'generated policy name');
     return combined;
