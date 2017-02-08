@@ -110,7 +110,6 @@ exports.handler = createHandler((argv, done) => {
         //       easier than using the aws api to poll.
         let delay = justCreated ? 5000 : 0;
         setTimeout(next, delay, null, data.Role.Arn);
-        next(null, data.Role.Arn);
       });
     },
     attachPolicies: function(state, next) {
