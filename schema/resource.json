@@ -121,7 +121,7 @@
     "identifier_with_wildcards": {
       "type":               "string",
       "minLength":          1,
-      "pattern":            "^([\\w\\d][\\w\\d\\*-]*|\\*)$"
+      "pattern":            "^([\\w\\d][\\w\\d\\/\\*-]*|\\*)$"
     },
     "version": {
       "type":               "string",
