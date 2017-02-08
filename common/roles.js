@@ -29,6 +29,7 @@ const roles = module.exports = {
   },
 
   createRole: function(name, document, callback) {
+    global.log.trace({ name, document }, 'create role');
     let path = '/resource/';
     let policyArn = arn.make({
       service:    'iam',
@@ -66,6 +67,7 @@ const roles = module.exports = {
   },
 
   attachManagedPolicy: function(roleName, policyArn, callback) {
+    global.log.trace({ roleName, policyArn }, 'attach managed policy');
     roles.getAttachedPolicies(roleName, (err, data) => {
       if (err) return callback(err);
       let existingPolicies = data.AttachedPolicies.filter(policy => {
@@ -85,6 +87,7 @@ const roles = module.exports = {
   },
 
   attachInlinePolicy: function(roleName, policyName, document, callback) {
+    global.log.trace({ roleName, policyName, document }, 'attach inline policy');
     let params = {
       RoleName:       roleName,
       PolicyName:     policyName,
