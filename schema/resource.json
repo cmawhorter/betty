@@ -121,7 +121,7 @@
     "aws_identifier": {
       "type":               "string",
       "minLength":          1,
-      "pattern":            "^[\\w\\d].*$"
+      "pattern":            "^([\\w\\d].*|\\*)$"
     },
     "version": {
       "type":               "string",
