@@ -6,8 +6,6 @@ const waterfall   = require('waterfall');
 const iam         = require('./iam.js');
 const arn         = require('./arn.js');
 
-const AWSLambdaBasicExecutionRoleArn = 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole';
-
 // default taken from aws
 const assumedRolePolicyDocument = {
   "Version": "2012-10-17",
@@ -83,7 +81,13 @@ const roles = module.exports = {
   },
 
   attachAwsLambdaBasicExecutionRole: function(roleName, callback) {
-    roles.attachManagedPolicy(roleName, AWSLambdaBasicExecutionRoleArn, callback);
+    let globalPolicy = global.betty.aws.global_policy;
+    let globalPolicyArn = 0 === globalPolicy.indexOf('arn:') ? globalPolicy : arn.make({
+      service:    'iam',
+      account:    global.betty.aws.accountId,
+      resource:   `policy/${globalPolicy}`,
+    });
+    roles.attachManagedPolicy(roleName, globalPolicyArn, callback);
   },
 
   attachInlinePolicy: function(roleName, policyName, document, callback) {
