@@ -14,6 +14,7 @@ const builtins    = require('builtin-modules');
 
 const rimraf      = require('rimraf');
 
+const tryLoad     = require('../../common/try-load.js');
 const createHandler = require('../lib/handler.js');
 
 let cache;
@@ -72,7 +73,11 @@ function removeExternal(target, externals) {
 exports.handler = createHandler((argv, done) => {
   global.log.info('build started');
   global.log.debug({ argv }, 'arguments');
-  let unbundledKeys = Object.keys(global.betty.build.unbundled || {});
+  let pkgJson = tryLoad.json(path.join(process.cwd(), 'package.json')) || {};
+  let pkgJsonDependencies = Object.keys(pkgJson.dependencies || {});
+  let unbundledKeys = Object.keys(global.betty.build.unbundled || {}).filter(unbundledKey => {
+    return pkgJsonDependencies.indexOf(unbundledKey) > -1;
+  });
   let defaultRollupOptions = {
     entry:              path.join(process.cwd(), argv.source || 'src/main.js'),
     cache:              cache,
