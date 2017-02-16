@@ -30,7 +30,11 @@ exports.builder = {
     boolean:        true,
     alias:          'v',
     describe:       'Verbose output',
-  }
+  },
+  'skip-interop-patch': {
+    boolean:        true,
+    describe:       'Skip the (hopefully) temporary workaround for rollup cjs interop build by patching output',
+  },
 };
 
 function writePackageJson(target, unbundledKeys) {
@@ -72,6 +76,11 @@ function removeExternal(target, externals) {
     rimraf.sync(extDep);
   });
   global.log.debug('removed external dependencies');
+}
+
+function patchInteropFunction(compiledOutput) {
+  let patchedFn = `function _interopDefault (ex) { if (typeof ex === 'object') { const properties = Object.keys(ex); if (properties.length === 1 && properties[0] === 'default') { return ex['default']; } else { return ex; } } else { return ex; } }`;
+  return compiledOutput.replace(/^function\s+_interopDefault\s*.+$/m, patchedFn);
 }
 
 exports.handler = createHandler((argv, done) => {
@@ -127,8 +136,17 @@ exports.handler = createHandler((argv, done) => {
       sourceMap:    true,
       dest:         argv.main || 'dist/index.js',
     };
-    bundle.write(outputConfig);
-    global.log.debug({ config: outputConfig }, 'output written');
+    bundle.write(outputConfig).then(() => {
+      if (!argv['skip-interop-patch']) {
+        global.log.info('applying interop patch');
+        let compiledOutput = fs.readFileSync(outputConfig.dest).toString();
+        let patchedOutput = patchInteropFunction(compiledOutput);
+        global.log.debug({ successful: compiledOutput !== patchedOutput }, 'patch outcome');
+        global.log.trace({ before: compiledOutput, after: patchedOutput }, 'patched output');
+        fs.writeFileSync(outputConfig.dest, patchedOutput);
+      }
+      global.log.debug({ config: outputConfig }, 'output written');
+    });
     if (argv.analyze) {
       console.log('\n\n');
       analyzer.formatted(bundle).then(console.log).catch(console.error);
