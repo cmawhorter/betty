@@ -32,6 +32,10 @@ exports.handler = createHandler(function(argv, done) {
     }
   }
   else {
+    // load env
+    Object.keys(global.config.configuration.environment).forEach(key => {
+      process.env[key] = global.config.configuration.environment[key];
+    });
     let functionModule = require(path.join(process.cwd(), argv.main || 'dist/index.js'));
     lambdaHandler = functionModule.handler;
   }
