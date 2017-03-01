@@ -138,11 +138,11 @@
             {
               "type":       "array",
               "items": {
-                "$ref":     "#/definitions/identifier"
+                "$ref":     "#/definitions/aws_identifier"
               }
             },
             {
-              "$ref":       "#/definitions/identifier"
+              "$ref":       "#/definitions/aws_identifier"
             }
           ]
         },
