@@ -102,10 +102,14 @@ exports.handler = createHandler((argv, done) => {
   waterfall({
     role: (state, next) => {
       global.log.debug('starting role');
-      roles.createLambdaRole(global.config.name, (err, data) => {
+      roles.createLambdaRole(global.config.name, (err, data, justCreated) => {
         if (err) return next(err);
         global.log.debug({ role: data.Role }, 'got role');
-        next(null, data.Role.Arn);
+        // HACK: if role was just created it can take a few seconds to become
+        //       available to assign to the function.
+        //       easier than using the aws api to poll.
+        let delay = justCreated ? 5000 : 0;
+        setTimeout(next, delay, null, data.Role.Arn);
       });
     },
     attachPolicies: function(state, next) {

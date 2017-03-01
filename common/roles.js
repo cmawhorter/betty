@@ -6,8 +6,6 @@ const waterfall   = require('waterfall');
 const iam         = require('./iam.js');
 const arn         = require('./arn.js');
 
-const AWSLambdaBasicExecutionRoleArn = 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole';
-
 // default taken from aws
 const assumedRolePolicyDocument = {
   "Version": "2012-10-17",
@@ -29,6 +27,7 @@ const roles = module.exports = {
   },
 
   createRole: function(name, document, callback) {
+    global.log.trace({ name, document }, 'create role');
     let path = '/resource/';
     let policyArn = arn.make({
       service:    'iam',
@@ -43,10 +42,10 @@ const roles = module.exports = {
           AssumeRolePolicyDocument:   JSON.stringify(document, null, 2),
           Path:                       path || null,
         };
-        iam.createRole(params, callback);
+        iam.createRole(params, (err, data) => callback(err, data, true));
       }
       else {
-        callback(null, data);
+        callback(null, data, false);
       }
     });
   },
@@ -66,6 +65,7 @@ const roles = module.exports = {
   },
 
   attachManagedPolicy: function(roleName, policyArn, callback) {
+    global.log.trace({ roleName, policyArn }, 'attach managed policy');
     roles.getAttachedPolicies(roleName, (err, data) => {
       if (err) return callback(err);
       let existingPolicies = data.AttachedPolicies.filter(policy => {
@@ -81,10 +81,17 @@ const roles = module.exports = {
   },
 
   attachAwsLambdaBasicExecutionRole: function(roleName, callback) {
-    roles.attachManagedPolicy(roleName, AWSLambdaBasicExecutionRoleArn, callback);
+    let globalPolicy = global.betty.aws.global_policy;
+    let globalPolicyArn = 0 === globalPolicy.indexOf('arn:') ? globalPolicy : arn.make({
+      service:    'iam',
+      account:    global.betty.aws.accountId,
+      resource:   `policy/${globalPolicy}`,
+    });
+    roles.attachManagedPolicy(roleName, globalPolicyArn, callback);
   },
 
   attachInlinePolicy: function(roleName, policyName, document, callback) {
+    global.log.trace({ roleName, policyName, document }, 'attach inline policy');
     let params = {
       RoleName:       roleName,
       PolicyName:     policyName,

@@ -59,8 +59,8 @@ const resource = module.exports = {
     let valid = schema.validate('resource', data);
     if (!valid) {
       let err = new Error('validation failed');
-      console.log(validate.errors);
-      err.validationErrors = validate.errors;
+      global.log.error({ errors: schema.errors }, 'schema validation failed');
+      err.validationErrors = schema.errors;
       throw err;
     }
     return valid;

@@ -13,8 +13,10 @@ global.betty = global.BETTY = require('rc')('betty', {
     accountId:        null,
     profile:          process.env.AWS_PROFILE || null,
     region:           process.env.AWS_REGION || null,
+    global_policy:    'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
   },
   registry:           null,
+  build:              {},
 });
 
 // because aws-sdk is an amazing piece of software
