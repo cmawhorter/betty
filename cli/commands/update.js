@@ -28,7 +28,7 @@ function createCodeBundle(dist, next) {
     store: true,
   });
   output.on('finish', () => next(null, output.getContents()));
-  archive.on('error', () => next(err));
+  archive.on('error', (err) => next(err));
   archive.pipe(output);
   archive.directory(dist + '/', '.');
   archive.finalize();
