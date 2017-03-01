@@ -28,7 +28,7 @@ function createCodeBundle(dist, next) {
     store: true,
   });
   output.on('finish', () => next(null, output.getContents()));
-  archive.on('error', (err) => next(err));
+  archive.on('error', next);
   archive.pipe(output);
   archive.directory(dist + '/', '.');
   archive.finalize();
@@ -91,7 +91,10 @@ exports.handler = createHandler((argv, done) => {
   let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
   if (argv.test) {
     createCodeBundle(dist, (err, bufferCode) => {
-      if (err) throw err;
+      if (err) {
+        global.log.error({ err }, 'output code bundle failed');
+        return done(err);
+      }
       let bundleZip = path.join(dist, 'bundle.zip');
       fs.writeFileSync(bundleZip, bufferCode);
     });
@@ -169,7 +172,10 @@ exports.handler = createHandler((argv, done) => {
     bundle: (state, next) => {
       global.log.debug('starting bundle');
       createCodeBundle(dist, (err, bufferCode) => {
-        if (err) return next(err);
+        if (err) {
+          global.log.error({ err }, 'code bundle failed');
+          return next(err);
+        }
         global.log.debug({ size: bufferCode.byteLength }, 'bundle created');
         next(null, bufferCode);
       });
