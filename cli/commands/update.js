@@ -89,6 +89,18 @@ exports.handler = createHandler((argv, done) => {
   global.log.info({ region: global.betty.aws.region }, 'update started');
   global.log.debug({ argv, config: global.config }, 'settings');
   let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
+  try {
+    let filesInDist = fs.readdirSync(dist);
+    if (0 === filesInDist.length) {
+      let err = new Error('no files in dist');
+      global.log.error({ err, dist }, 'dist not found');
+      return done(err);
+    }
+  }
+  catch (err) {
+    global.log.warn({ err, dist }, 'error reading dist - did you forget to run betty build first?');
+    return done(err);
+  }
   if (argv.test) {
     createCodeBundle(dist, (err, bufferCode) => {
       if (err) {
