@@ -8,6 +8,9 @@ prettyStdOut.pipe(process.stdout);
 
 global.log = bunyan.createLogger({
   name:         'betty',
+  serializers: {
+    err:        bunyan.stdSerializers.err,
+  },
   streams: [{
     level:      global.betty.log_level,
     stream:     prettyStdOut,
