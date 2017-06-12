@@ -1,9 +1,13 @@
 {
-  "name": "betty",
-  "version": "1.0.0",
+  "name": "bty",
+  "version": "1.0.0-alpha.1",
   "description": "Simple command line utility for developing and deploying AWS Lambda functions.",
   "bin": {
+    "bty": "./cli/index.js",
     "betty": "./cli/index.js"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha -r ./test/lib/helper test"
   },
   "author": {
     "name": "Cory Mawhorter",
@@ -28,8 +32,10 @@
     "bunyan": "^1.8.5",
     "bunyan-prettystream": "^0.1.3",
     "deep-assign": "^2.0.0",
+    "expect": "*",
     "lambda-emulator": "github:cmawhorter/lambda-emulator",
     "mkdirp": "^0.5.1",
+    "mocha": "*",
     "pbcw": "github:stampr/pretty-bunyan-cloudwatch-logs#1.0.0",
     "rc": "^1.1.6",
     "require-dir": "^0.3.1",
@@ -41,9 +47,9 @@
     "rollup-plugin-json": "^2.1.0",
     "rollup-plugin-node-resolve": "^2.0.0",
     "slug": "^0.9.1",
+    "steppin": "^1.1.0",
     "stream-buffers": "^3.0.1",
-    "urn": "github:cmawhorter/urn",
-    "waterfall": "github:cmawhorter/waterfall#1.0.0",
+    "urn-lib": "^1.1.2",
     "yargs": "^6.6.0"
   },
   "keywords": [

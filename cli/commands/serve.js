@@ -51,8 +51,7 @@ exports.handler = createHandler(function(argv, done) {
       options.handler = eval(argv.eval);
     }
     catch (err) {
-      console.log('error eval fn', err.stack || err);
-      console.log('received function string: ', argv.eval);
+      global.log.error({ err, code: argv.eval }, 'error eval fn');
       process.exit(1);
     }
   }

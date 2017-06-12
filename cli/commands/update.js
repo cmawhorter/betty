@@ -5,7 +5,7 @@ const path          = require('path');
 const streamBuffers = require('stream-buffers');
 const AWS           = require('aws-sdk');
 const archiver      = require('archiver');
-const waterfall     = require('waterfall');
+const waterfall     = require('steppin');
 const async         = require('async');
 const arn           = require('../../common/arn.js');
 const roles         = require('../../common/roles.js');
@@ -59,7 +59,7 @@ function addConfigParams(params, role, deadLetterArn, config, settings) {
 function createFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
   let params = {};
   addConfigParams(params, role, deadLetterArn, config, config.configuration);
-  console.log('config params', params);
+  global.log.debug({ params }, 'config params');
   addCodeParams(params, bufferCode);
   params.Code = {
     ZipFile:        bufferCode,
@@ -70,7 +70,7 @@ function createFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
 function updateFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
   let configParams = {};
   addConfigParams(configParams, role, deadLetterArn, config, config.configuration);
-  console.log('config params', configParams);
+  global.log.debug({ params: configParams }, 'config params');
   lambda.updateFunctionConfiguration(configParams, (err, data) => {
     if (err) return next(err);
     let codeParams = { FunctionName: configParams.FunctionName };

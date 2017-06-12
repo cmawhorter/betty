@@ -1,7 +1,7 @@
 'use strict';
 
 const slug        = require('slug');
-const waterfall   = require('waterfall');
+const waterfall   = require('steppin');
 const iam         = require('./iam.js');
 const arn         = require('./arn.js');
 

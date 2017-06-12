@@ -4,7 +4,7 @@ const path          = require('path');
 const spawn         = require('child_process').spawn;
 const AWS           = require('aws-sdk');
 const async         = require('async');
-const waterfall     = require('waterfall');
+const waterfall     = require('steppin');
 const createHandler = require('../lib/handler.js');
 
 const STABLE_ALIAS = 'LATEST_STABLE';

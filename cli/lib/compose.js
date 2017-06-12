@@ -1,6 +1,6 @@
 'use strict';
 
-const waterfall     = require('waterfall');
+const waterfall     = require('steppin');
 const deepAssign    = require('deep-assign');
 
 const defaultHandler = (err) => {

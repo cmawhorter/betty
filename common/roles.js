@@ -2,7 +2,7 @@
 
 // AWSLambdaBasicExecutionRole (lambda should always get this to be able to write cloudwatch logs)
 
-const waterfall   = require('waterfall');
+const waterfall   = require('steppin');
 const iam         = require('./iam.js');
 const arn         = require('./arn.js');
 
