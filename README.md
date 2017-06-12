@@ -7,6 +7,10 @@ Why? Because webpack wasn't cutting it:
 
 Webpack regularly put out 10MB bundles.  Rollup does magic, and reduces that down to just what's needed.  Like god intended.
 
+## Installing
+
+`npm install bty`
+
 ## Prerequisites
 
 - Create an IAM role for your lambda function
