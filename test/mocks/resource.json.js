@@ -3,7 +3,6 @@ module.exports = {
   "region": "us-west-2",
   "name": "some-service",
   "description": "this is some service",
-  "version": "0000-00-00",
   "repository": "github",
   "author":  "Bob",
   "contributors": [
@@ -35,7 +34,7 @@ module.exports = {
   "client": "github:blah/some-service.git",
   "health": "url for cloudwatch",
   "manage": "url for s3 or wherever",
-  "readme": "README.md",
+  "documentation": "url for documentation",
   "keywords": [
     "image",
     "thumbnail"

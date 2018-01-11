@@ -1,6 +1,7 @@
 {
   "$schema":                "http://json-schema.org/draft-04/schema#",
   "type":                   "object",
+  "additionalProperties":   false,
   "required":               [ "name" ],
   "properties": {
     "universe": {
@@ -83,6 +84,9 @@
       "type":               "string"
     },
     "manage": {
+      "type":               "string"
+    },
+    "documentation": {
       "type":               "string"
     },
     "keywords": {
