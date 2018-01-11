@@ -27,6 +27,17 @@ exports.builder = {
   },
 };
 
+function filterNulls(obj) {
+  let newObj = {};
+  Object.keys(obj).forEach(key => {
+    let value = obj[key];
+    if (null !== value && undefined !== value) {
+      newObj[key] = value;
+    }
+  });
+  return newObj;
+}
+
 function isArn(arn) {
   return 0 === absOrPartialArn.indexOf('arn:');
 }
@@ -78,7 +89,7 @@ function addConfigParams(params, role, config, settings) {
     Runtime:            settings.runtime || 'nodejs4.3',
     Timeout:            settings.timeout || 15,
     DeadLetterConfig:   config.deadLetterQueue ? { TargetArn: expandDeadLetterQueueName(config.deadLetterQueue) } : null,
-    Environment:        settings.environment ? { Variables: settings.environment } : null,
+    Environment:        settings.environment ? { Variables: filterNulls(settings.environment) } : null,
     VpcConfig,
   });
 }
