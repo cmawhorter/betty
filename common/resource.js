@@ -27,7 +27,6 @@ const resource = module.exports = {
     if (config) {
       config.resources = Object.assign(config.resources || {}, tryLoad.json(resources) || {});
       config.configuration = config.configuration || {};
-      config.build = config.build || {};
       resource.validate(config);
     }
     else {
@@ -59,6 +58,7 @@ const resource = module.exports = {
     let valid = schema.validate('resource', data);
     if (!valid) {
       let err = new Error('validation failed');
+      global.log.warn({ data }, 'data failing validation');
       global.log.error({ errors: schema.errors }, 'schema validation failed');
       err.validationErrors = schema.errors;
       throw err;

@@ -27,10 +27,11 @@ exports.builder = {
   },
 };
 
-function filterNulls(obj) {
+function createEnvironmentVars(obj, extend) {
+  let env = Object.assign({}, obj, extend || {});
   let newObj = {};
-  Object.keys(obj).forEach(key => {
-    let value = obj[key];
+  Object.keys(env).forEach(key => {
+    let value = env[key];
     if (null !== value && undefined !== value) {
       newObj[key] = value;
     }
@@ -89,7 +90,7 @@ function addConfigParams(params, role, config, settings) {
     Runtime:            settings.runtime || 'nodejs4.3',
     Timeout:            settings.timeout || 15,
     DeadLetterConfig:   config.deadLetterQueue ? { TargetArn: expandDeadLetterQueueName(config.deadLetterQueue) } : null,
-    Environment:        settings.environment ? { Variables: filterNulls(settings.environment) } : null,
+    Environment:        settings.environment ? { Variables: createEnvironmentVars(settings.environment, { betty_env: global.betty.env }) } : null,
     VpcConfig,
   });
 }

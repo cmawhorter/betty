@@ -6,8 +6,17 @@ const tryLoad     = require('./try-load.js');
 
 require('./app-storage.js');
 
+let env = null;
+
+if (process.argv.indexOf('--development') > -1) {
+  env = 'development';
+}
+else if (process.argv.indexOf('--production') > -1) {
+  env = 'production';
+}
+
 global.betty = global.BETTY = require('rc')('betty', {
-  env:                'development',
+  env,
   log_level:          process.env.DEBUG ? 'debug' : process.env.LOG_LEVEL || 'info',
   aws: {
     accountId:        null,
@@ -31,6 +40,7 @@ global.betty.utils = {
 
 let valid = schema.validate('bettyrc', global.betty);
 if (!valid) {
+  console.log('data being validated: ', JSON.stringify(global.betty, null, 2));
   console.log('validation errors', schema.errors);
   throw new Error('betty configuration invalid.  see console.log for details');
 }
