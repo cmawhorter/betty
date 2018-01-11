@@ -202,7 +202,7 @@ exports.handler = createHandler((argv, done) => {
         console.log('\n\n');
         analyzer.formatted(bundle).then(console.log).catch(console.error);
       }
-      req.log.trace({ destinationDir, unbundledKeys }, 'loading npm dependencies');
+      global.log.trace({ destinationDir, unbundledKeys }, 'loading npm dependencies');
       loadNpmDependencies(destinationDir, unbundledKeys);
       bundle.write(outputConfig).then(() => {
         postProcessBuild(argv, outputConfig);
