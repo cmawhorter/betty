@@ -16,7 +16,12 @@ exports.command = 'update';
 exports.desc    = 'Uploads the contents of dist to lambda as a new function version';
 exports.builder = {
   test: {
-    describe:       'Outputs bundled code to build directory and does not contact AWS',
+    describe:       'Output bundled code to build directory and does not contact AWS',
+    boolean:        true,
+    default:        false,
+  },
+  'skip-role': {
+    describe:       'Do not attempt to create a role for this function. Useful for unprivileged users or if you did not make any changes',
     boolean:        true,
     default:        false,
   },
@@ -138,6 +143,10 @@ exports.handler = createHandler((argv, done) => {
   let lambda = new AWS.Lambda({ region: global.betty.aws.region });
   waterfall({
     role: (state, next) => {
+      if (config['skip-role']) {
+        global.log.info('role creation was skipped');
+        return next(null, null);
+      }
       global.log.debug('starting role');
       roles.createLambdaRole(global.config.name, (err, data, justCreated) => {
         if (err) return next(err);
@@ -174,7 +183,10 @@ exports.handler = createHandler((argv, done) => {
       ].concat(inlineAssetPolicies, dependentResourcePolicies), next);
     },
     publishManagedPolicy: function(state, next) {
-      if (!global.config.policy) return next(null, null);
+      if (!global.config.policy) {
+        global.log.warn('no policy exists for resource. skipping');
+        return next(null, null);
+      }
       let policyDocument = policies.documentFromAssets(global.config.policy || []);
       global.log.debug({ document: policyDocument }, 'publishing managed policy for downstream');
       policies.createManagedPolicy(global.config.name, policyDocument, next);
