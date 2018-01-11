@@ -6,17 +6,8 @@ const tryLoad     = require('./try-load.js');
 
 require('./app-storage.js');
 
-let env = null;
-
-if (process.argv.indexOf('--development') > -1) {
-  env = 'development';
-}
-else if (process.argv.indexOf('--production') > -1) {
-  env = 'production';
-}
-
 global.betty = global.BETTY = require('rc')('betty', {
-  env,
+  env:                null,
   log_level:          process.env.DEBUG ? 'debug' : process.env.LOG_LEVEL || 'info',
   aws: {
     accountId:        null,
@@ -27,6 +18,16 @@ global.betty = global.BETTY = require('rc')('betty', {
   registry:           null,
   build:              {},
 });
+
+// override if arg on cli and not an env
+if (!process.env.betty_env) {
+  if (process.argv.indexOf('--development') > -1) {
+    global.betty.env = 'development';
+  }
+  else if (process.argv.indexOf('--production') > -1) {
+    global.betty.env = 'production';
+  }
+}
 
 // because aws-sdk is an amazing piece of software
 process.env.AWS_PROFILE = global.betty.aws.profile;
