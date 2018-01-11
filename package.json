@@ -1,6 +1,6 @@
 {
   "name": "bty",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "Simple command line utility for developing and deploying AWS Lambda functions.",
   "bin": {
     "bty": "./cli/index.js",

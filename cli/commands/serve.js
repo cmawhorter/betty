@@ -57,8 +57,9 @@ exports.handler = createHandler(function(argv, done) {
   }
   else {
     // load env
-    Object.keys(global.config.configuration.environment).forEach(key => {
-      process.env[key] = global.config.configuration.environment[key];
+    let environment = global.config.configuration.environment || {};
+    Object.keys(environment).forEach(key => {
+      process.env[key] = environment[key];
     });
     let compiledHandler = path.join(process.cwd(), argv.main || 'dist/index.js');
     let reload = () => {

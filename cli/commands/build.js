@@ -206,6 +206,7 @@ exports.handler = createHandler((argv, done) => {
       loadNpmDependencies(destinationDir, unbundledKeys);
       bundle.write(outputConfig).then(() => {
         postProcessBuild(argv, outputConfig);
+        done(null);
       });
     });
   }
