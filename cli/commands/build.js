@@ -4,6 +4,7 @@ const path        = require('path');
 const fs          = require('fs');
 const spawnSync   = require('child_process').spawnSync;
 
+const deepAssign  = require('deep-assign');
 const rollup      = require('rollup');
 const babel       = require('rollup-plugin-babel');
 const nodeResolve = require('rollup-plugin-node-resolve');
@@ -17,14 +18,16 @@ const rimraf      = require('rimraf');
 const tryLoad     = require('../../common/try-load.js');
 const createHandler = require('../lib/handler.js');
 
-let cache;
-
 exports.command = 'build';
 exports.desc    = 'Compiles and transpiles source into a lambda-ready build';
 exports.builder = {
   analyze: {
     boolean:        true,
     describe:       'Analyze the bundle and print the results',
+  },
+  watch: {
+    boolean:        true,
+    describe:       'Use rollup.watch to continuously monitor for changes and build as necessary.  Only helpful during dev to test your changes with serve.',
   },
   verbose: {
     boolean:        true,
@@ -83,10 +86,56 @@ function patchInteropFunction(compiledOutput) {
   return compiledOutput.replace(/^function\s+_interopDefault\s*.+$/m, patchedFn);
 }
 
+function patchBundle(outputConfig) {
+  global.log.info('applying interop patch');
+  let compiledOutput = fs.readFileSync(outputConfig.file).toString();
+  let patchedOutput = patchInteropFunction(compiledOutput);
+  global.log.debug({ successful: compiledOutput !== patchedOutput }, 'patch outcome');
+  global.log.trace({ before: compiledOutput, after: patchedOutput }, 'patched output');
+  fs.writeFileSync(outputConfig.file, patchedOutput);
+  global.log.debug({ config: outputConfig }, 'patched output written');
+}
+
+function loadNpmDependencies(target, unbundledKeys) {
+  if (unbundledKeys.length) {
+    global.log.debug({ keys: unbundledKeys }, 'processing unbundled');
+    writePackageJson(target, unbundledKeys);
+    npmInstall(target);
+    removeExternal(target, [ 'aws-sdk' ]);
+  }
+}
+
+function watcherEventHandler(onBuildReady, event) {
+  let logger = global.log.child(event, true);
+  logger.debug('watcher event');
+  switch (event.code) {
+    case 'BUNDLE_END':
+      logger.debug('bundling ended');
+      onBuildReady();
+    break;
+    case 'ERROR':
+      logger.warn('watcher error');
+    break;
+    case 'FATAL':
+      logger.error({ err: event.error }, 'watcher fatal error');
+    break;
+  }
+}
+
+function postProcessBuild(argv, outputConfig) {
+  global.log.info('build complete');
+  if (!argv['skip-interop-patch']) {
+    patchBundle(outputConfig);
+  }
+  global.log.info('build ready');
+}
+
 exports.handler = createHandler((argv, done) => {
   global.log.info('build started');
   global.log.debug({ argv }, 'arguments');
-  let pkgJson = tryLoad.json(path.join(process.cwd(), 'package.json')) || {};
+  let destination         = argv.main ? path.resolve(argv.main) : path.join(process.cwd(), 'dist/index.js');
+  let destinationDir      = path.dirname(destination);
+  let pkgJson             = tryLoad.json(path.join(process.cwd(), 'package.json')) || {};
   let pkgJsonDependencies = Object.keys(pkgJson.dependencies || {});
   let unbundledKeys = Object.keys(global.betty.build.unbundled || {}).filter(unbundledKey => {
     if (pkgJsonDependencies.indexOf(unbundledKey) > -1) {
@@ -104,8 +153,7 @@ exports.handler = createHandler((argv, done) => {
     return false;
   });
   let defaultRollupOptions = {
-    entry:              path.join(process.cwd(), argv.source || 'src/main.js'),
-    cache:              cache,
+    input:              path.join(process.cwd(), argv.source || 'src/main.js'),
     plugins: [
       json(),
       nodeResolve({
@@ -125,39 +173,40 @@ exports.handler = createHandler((argv, done) => {
     ],
     external:           [ 'aws-sdk' ].concat(builtins, unbundledKeys),
   };
-  let buildConfig = argv.rollup || defaultRollupOptions;
+  let buildConfig = deepAssign({}, argv.rollup || defaultRollupOptions);
+  let outputConfig = {
+    file:         destination,
+    format:       'cjs',
+    sourcemap:    true,
+  };
   global.log.debug({ rollup: buildConfig }, 'build config');
   global.log.info('starting rollup');
-  rollup.rollup(buildConfig).then(bundle => {
-    cache = bundle; // build doesn't watch so this isn't used
-    global.log.info('build complete');
-    let outputConfig = {
-      format:       'cjs',
-      sourceMap:    true,
-      dest:         argv.main || 'dist/index.js',
+  if (argv.watch) {
+    buildConfig.watch = {
+      // chokidar:       true,
+      include:        path.dirname(buildConfig.input) + '/**', // limit watching to src directory only
+      exclude:        'node_modules/**', // just in case user installing deps into src
+      clearScreen:    false,
     };
-    bundle.write(outputConfig).then(() => {
-      if (!argv['skip-interop-patch']) {
-        global.log.info('applying interop patch');
-        let compiledOutput = fs.readFileSync(outputConfig.dest).toString();
-        let patchedOutput = patchInteropFunction(compiledOutput);
-        global.log.debug({ successful: compiledOutput !== patchedOutput }, 'patch outcome');
-        global.log.trace({ before: compiledOutput, after: patchedOutput }, 'patched output');
-        fs.writeFileSync(outputConfig.dest, patchedOutput);
+    buildConfig.output = outputConfig;
+    global.log.debug({ config: buildConfig }, 'watcher options');
+    let watcher = rollup.watch(buildConfig);
+    global.log.trace('attaching event handler');
+    watcher.on('event', watcherEventHandler.bind(null, () => {
+      postProcessBuild(argv, outputConfig);
+    }));
+  }
+  else {
+    rollup.rollup(buildConfig).then(bundle => {
+      if (argv.analyze) {
+        console.log('\n\n');
+        analyzer.formatted(bundle).then(console.log).catch(console.error);
       }
-      global.log.debug({ config: outputConfig }, 'output written');
+      req.log.trace({ destinationDir, unbundledKeys }, 'loading npm dependencies');
+      loadNpmDependencies(destinationDir, unbundledKeys);
+      bundle.write(outputConfig).then(() => {
+        postProcessBuild(argv, outputConfig);
+      });
     });
-    if (argv.analyze) {
-      console.log('\n\n');
-      analyzer.formatted(bundle).then(console.log).catch(console.error);
-    }
-    if (unbundledKeys.length) {
-      global.log.debug({ keys: unbundledKeys }, 'processing unbundled');
-      let target = path.dirname(path.resolve(argv.main || 'dist/index.js'));
-      writePackageJson(target, unbundledKeys);
-      npmInstall(target);
-      removeExternal(target, [ 'aws-sdk' ]);
-    }
-    done(null);
-  }, done);
+  }
 });

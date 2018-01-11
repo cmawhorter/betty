@@ -221,11 +221,11 @@ exports.handler = createHandler((argv, done) => {
     update: (state, next) => {
       if (state.exists) {
         global.log.info('updating existing function');
-        updateFunction(lambda, state.role, null, global.config, state.bundle, next);
+        updateFunction(lambda, state.role, global.config, state.bundle, next);
       }
       else {
         global.log.info('creating new function');
-        createFunction(lambda, state.role, null, global.config, state.bundle, next);
+        createFunction(lambda, state.role, global.config, state.bundle, next);
       }
     },
   }, (err, state) => {
