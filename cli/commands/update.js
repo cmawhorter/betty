@@ -174,6 +174,7 @@ exports.handler = createHandler((argv, done) => {
       ].concat(inlineAssetPolicies, dependentResourcePolicies), next);
     },
     publishManagedPolicy: function(state, next) {
+      if (!global.config.policy) return next(null, null);
       let policyDocument = policies.documentFromAssets(global.config.policy || []);
       global.log.debug({ document: policyDocument }, 'publishing managed policy for downstream');
       policies.createManagedPolicy(global.config.name, policyDocument, next);
