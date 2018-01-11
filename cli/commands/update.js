@@ -42,6 +42,10 @@ function addCodeParams(params, bufferCode) {
 
 function addConfigParams(params, role, deadLetterArn, config, settings) {
   config = config || {};
+  let VpcConfig = !config.vpc ? null : {
+    SubnetIds:          config.subnetIds,
+    SecurityGroupIds:   config.securityGroupIds,
+  };
   Object.assign(params, {
     FunctionName:       config.name,
     Description:        config.description || '',
@@ -51,8 +55,8 @@ function addConfigParams(params, role, deadLetterArn, config, settings) {
     Runtime:            settings.runtime || 'nodejs4.3',
     Timeout:            settings.timeout || 15,
     DeadLetterConfig:   deadLetterArn ? { TargetArn: deadLetterArn } : null,
-    // VpcConfig: {},
     Environment:        settings.environment ? { Variables: settings.environment } : null,
+    VpcConfig,
   });
 }
 
