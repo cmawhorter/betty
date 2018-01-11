@@ -15,13 +15,21 @@ describe('schema', function() {
   });
   it('should support vpc in lambda config', function() {
     let resource = deepAssign({}, validMockResourceJson);
-    expect(schema.validate('resource', resource)).toEqual(true);
     resource.configuration.vpc = null;
     expect(schema.validate('resource', resource)).toEqual(true);
     resource.configuration.vpc = {
       subnetIds: [ '1', '2', '3' ],
       securityGroupIds: [ '1', '2', '3' ],
     };
+    expect(schema.validate('resource', resource)).toEqual(true);
+  });
+  it('should support deadLetterQueue in lambda config', function() {
+    let resource = deepAssign({}, validMockResourceJson);
+    resource.configuration.deadLetterQueue = null;
+    expect(schema.validate('resource', resource)).toEqual(true);
+    resource.configuration.deadLetterQueue = 'some-queue-name';
+    expect(schema.validate('resource', resource)).toEqual(true);
+    resource.configuration.deadLetterQueue = 'arn:sqs:12345:us-west-2:some-queue-name';
     expect(schema.validate('resource', resource)).toEqual(true);
   });
 });

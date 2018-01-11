@@ -22,6 +22,24 @@ exports.builder = {
   },
 };
 
+function isArn(arn) {
+  return 0 === absOrPartialArn.indexOf('arn:');
+}
+
+function expandDeadLetterQueueName(arnOrQueueName) {
+  if (isArn(arnOrQueueName)) {
+    return arnOrQueueName;
+  }
+  else {
+    return arn.format({
+      service:      'sqs',
+      region:       global.betty.aws.region,
+      account:      global.betty.aws.accountId,
+      resource:     arnOrQueueName,
+    });
+  }
+}
+
 function createCodeBundle(dist, next) {
   let output = new streamBuffers.WritableStreamBuffer();
   let archive = archiver('zip', {
@@ -40,7 +58,7 @@ function addCodeParams(params, bufferCode) {
   });
 }
 
-function addConfigParams(params, role, deadLetterArn, config, settings) {
+function addConfigParams(params, role, config, settings) {
   config = config || {};
   let VpcConfig = !config.vpc ? null : {
     SubnetIds:          config.subnetIds,
@@ -54,15 +72,15 @@ function addConfigParams(params, role, deadLetterArn, config, settings) {
     Role:               role,
     Runtime:            settings.runtime || 'nodejs4.3',
     Timeout:            settings.timeout || 15,
-    DeadLetterConfig:   deadLetterArn ? { TargetArn: deadLetterArn } : null,
+    DeadLetterConfig:   config.deadLetterQueue ? { TargetArn: expandDeadLetterQueueName(config.deadLetterQueue) } : null,
     Environment:        settings.environment ? { Variables: settings.environment } : null,
     VpcConfig,
   });
 }
 
-function createFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
+function createFunction(lambda, role, config, bufferCode, next) {
   let params = {};
-  addConfigParams(params, role, deadLetterArn, config, config.configuration);
+  addConfigParams(params, role, config, config.configuration);
   global.log.debug({ params }, 'config params');
   addCodeParams(params, bufferCode);
   params.Code = {
@@ -71,9 +89,9 @@ function createFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
   lambda.createFunction(params, next);
 }
 
-function updateFunction(lambda, role, deadLetterArn, config, bufferCode, next) {
+function updateFunction(lambda, role, config, bufferCode, next) {
   let configParams = {};
-  addConfigParams(configParams, role, deadLetterArn, config, config.configuration);
+  addConfigParams(configParams, role, config, config.configuration);
   global.log.debug({ params: configParams }, 'config params');
   lambda.updateFunctionConfiguration(configParams, (err, data) => {
     if (err) return next(err);
@@ -160,31 +178,6 @@ exports.handler = createHandler((argv, done) => {
       global.log.debug({ document: policyDocument }, 'publishing managed policy for downstream');
       policies.createManagedPolicy(global.config.name, policyDocument, next);
     },
-    // deadLetterArn: (state, next) => {
-    //   if (!argv.config['dead-letter']) return next(null, null);
-    //   if (true === argv.config['dead-letter']) {
-    //     let parsed = arn.parse(state.role);
-    //     next(null, arn.format(Object.assign(parsed, {
-    //       service:      'sqs',
-    //       region:       global.betty.aws.region,
-    //       resource:     `lambda-dlq-${argv.config.name}`,
-    //     })));
-    //   }
-    //   else if (typeof argv.config['dead-letter'] === 'string') {
-    //     let parsed = arn.parse(state.role);
-    //     next(null, arn.format(Object.assign(parsed, {
-    //       service:      'sqs',
-    //       region:       global.betty.aws.region,
-    //       resource:     argv.config['dead-letter'],
-    //     })));
-    //   }
-    //   else if (0 === argv.config['dead-letter'].indexOf('arn:')) {
-    //     next(null, argv.config['dead-letter']);
-    //   }
-    //   else {
-    //     next(new Error('invalid dead letter option'));
-    //   }
-    // },
     bundle: (state, next) => {
       global.log.debug('starting bundle');
       createCodeBundle(dist, (err, bufferCode) => {
