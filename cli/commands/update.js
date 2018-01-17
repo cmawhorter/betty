@@ -115,7 +115,11 @@ function updateFunction(lambda, role, config, bufferCode, next) {
     let codeParams = { FunctionName: configParams.FunctionName };
     addCodeParams(codeParams, bufferCode);
     codeParams.ZipFile = bufferCode;
-    lambda.updateFunctionCode(codeParams, next);
+    let awsRequest = lambda.updateFunctionCode(codeParams, next);
+    global.log.info({ bytes: bufferCode.length, mb: (bufferCode.length / 1024 / 1024).toFixed(2) }, 'bundle size');
+    awsRequest.on('httpUploadProgress', (progress, response) => {
+      global.log.info(progress, 'upload progress');
+    });
   });
 }
 
