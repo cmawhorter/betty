@@ -152,8 +152,8 @@ exports.handler = createHandler((argv, done) => {
       }
       let bundleZip = path.join(dist, 'bundle.zip');
       fs.writeFileSync(bundleZip, bufferCode);
+      global.log.info({ destination: bundleZip }, 'test bundle created');
     });
-    global.log.info({ destination: bundleZip }, 'test bundle created');
     return;
   }
   let lambda = new AWS.Lambda({ region: global.betty.aws.region });
