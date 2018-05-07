@@ -17,22 +17,23 @@ const resource = module.exports = {
     let resources = path.join(cwd, `resources.json`);
     let resourceJs = tryLoad.js(jsVersion);
     let resourceJson = tryLoad.json(jsonVersion);
-    let config =  resourceJs || resourceJson;
     if (resourceJs) {
+      global.config = resourceJs;
       global.config_type = 'js';
     }
-    else if (resourceJs) {
+    else if (resourceJson) {
+      global.config = resourceJson;
       global.config_type = 'json';
     }
+    else {
+      global.config = {};
+      global.config_type = null;
+    }
     if (config) {
-      config.resources = Object.assign(config.resources || {}, tryLoad.json(resources) || {});
+      config.resources = Object.assign({}, config.resources, tryLoad.json(resources));
       config.configuration = config.configuration || {};
       resource.validate(config);
     }
-    else {
-      global.log.debug({ locations: [ jsVersion, jsonVersion ] }, 'could not load resource config');
-    }
-    global.config = config;
   },
 
   writeResources: function() {
