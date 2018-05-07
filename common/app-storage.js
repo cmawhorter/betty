@@ -34,7 +34,7 @@ const storage = global.storage = {
 
   get: function(f) {
     try {
-      return JSON.parse(storage.readRaw(`${f}.json`).toString('utf8'));
+      return JSON.parse(storage.readRaw(`${f}.json`));
     }
     catch (err) {
 

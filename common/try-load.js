@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const fs = require('fs');
 
 // f must be absolute
@@ -33,5 +34,13 @@ const tryLoad = module.exports = {
       global.log.error({ err, f }, 'unable to load json');
     }
     return null;
+  },
+  // prefers json. attempts to load file.json or file.js
+  // in a target directory that is cwd if not provided
+  find: function(basename, directory) {
+    directory = directory || process.cwd();
+    const js    = path.join(directory, `${basename}.js`);
+    const json  = path.join(directory, `${basename}.json`);
+    return tryLoad.json(json) || tryLoad.js(js);
   },
 };

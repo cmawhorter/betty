@@ -7,7 +7,7 @@
     "betty": "./cli/index.js"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha -r ./test/lib/helper test"
+    "test": "mocha -r ./test/lib/helper test"
   },
   "author": {
     "name": "Cory Mawhorter",
@@ -38,7 +38,6 @@
     "mkdirp": "^0.5.1",
     "mocha": "*",
     "pbcw": "github:stampr/pretty-bunyan-cloudwatch-logs#1.0.0",
-    "rc": "^1.1.6",
     "require-dir": "^0.3.1",
     "rimraf": "^2.5.4",
     "rollup": "^0.53.4",
