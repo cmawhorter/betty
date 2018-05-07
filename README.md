@@ -9,7 +9,7 @@ Webpack regularly put out 10MB bundles.  Rollup does magic, and reduces that dow
 
 ## Installing
 
-`npm install bty`
+`yarn add bty --dev`
 
 ## Getting started
 

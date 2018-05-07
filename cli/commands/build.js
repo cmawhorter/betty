@@ -38,6 +38,10 @@ exports.builder = {
     boolean:        true,
     describe:       'Skip the (hopefully) temporary workaround for rollup cjs interop build by patching output',
   },
+  npm: {
+    boolean:        true,
+    describe:       'Force use of npm for installing external dependencies. Default is to first try yarn and fall back to npm',
+  },
 };
 
 function writePackageJson(target, unbundledKeys) {
@@ -53,21 +57,61 @@ function writePackageJson(target, unbundledKeys) {
   }, null, 2));
 }
 
-function npmInstall(target) {
-  let node_modules = path.join(target, 'node_modules');
-  global.log.debug({ node_modules }, 'removing existing node_modules');
-  rimraf.sync(node_modules);
-  global.log.debug({ cwd: target }, 'running npm install');
-  let res = spawnSync('npm', [ 'install', '--production' ], {
+function _npmInstall(target) {
+  const res = spawnSync('npm', [ 'install', '--production' ], {
     stdio:      'inherit',
     cwd:        target + '/',
   });
-  if (res.status !== 0) {
-    global.log.warn({ code: res.status }, 'npm exited with non-zero');
-    global.log.trace(res, 'spawn sync response');
+  return res;
+}
+
+function _yarnInstall(target) {
+  const res = spawnSync('yarn', {
+    stdio:      'inherit',
+    cwd:        target + '/',
+  });
+  return res;
+}
+
+const _validPackageManagerCommands = [ 'yarn', 'npm' ];
+function _packageManagerExists(command) {
+  if (_validPackageManagerCommands.indexOf(command) < 0) { // shouldn't be possible
+    throw new Error('not a valid package manager command');
+  }
+  // both npm and yarn support -v so this should let us test their existence
+  const res = spawnSync(command, [ '-v' ]);
+  return res.status === 0;
+}
+
+function installExternalDeps(packageManagers, target) {
+  const node_modules = path.join(target, 'node_modules');
+  global.log.debug({ node_modules }, 'removing existing node_modules');
+  rimraf.sync(node_modules);
+  global.log.debug({ cwd: target }, 'running npm install');
+  const yarnAvailable = packageManagers.yarn && _packageManagerExists('yarn');
+  const npmAvailable = packageManagers.npm && _packageManagerExists('npm');
+  const node_modules = path.join(target, 'node_modules');
+  global.log.debug({ node_modules }, 'removing existing node_modules');
+  rimraf.sync(node_modules);
+  let result;
+  // prefer yarn
+  if (yarnAvailable) {
+    global.log.debug({ cwd: target, command: 'yarn' }, 'installing dependencies');
+    result = _yarnInstall(target);
+  }
+  else if (npmAvailable) {
+    global.log.debug({ cwd: target, command: 'npm' }, 'installing dependencies');
+    result = _npmInstall(target);
   }
   else {
+    throw new Error('no package manager configured; this should not be possible');
+  }
+  if (result.status === 0) {
     global.log.debug('npm install success');
+  }
+  else {
+    global.log.warn({ code: result.status }, 'npm exited with non-zero');
+    global.log.trace(result, 'spawn sync response');
   }
 }
 
@@ -96,11 +140,11 @@ function patchBundle(outputConfig) {
   global.log.debug({ config: outputConfig }, 'patched output written');
 }
 
-function loadNpmDependencies(target, unbundledKeys) {
+function loadNpmDependencies(packageManagers, target, unbundledKeys) {
   if (unbundledKeys.length) {
     global.log.debug({ keys: unbundledKeys }, 'processing unbundled');
     writePackageJson(target, unbundledKeys);
-    npmInstall(target);
+    installExternalDeps(packageManagers, target);
     removeExternal(target, [ 'aws-sdk' ]);
   }
 }
@@ -203,7 +247,8 @@ exports.handler = createHandler((argv, done) => {
         analyzer.formatted(bundle).then(console.log).catch(console.error);
       }
       global.log.trace({ destinationDir, unbundledKeys }, 'loading npm dependencies');
-      loadNpmDependencies(destinationDir, unbundledKeys);
+      const packageManagers = argv.npm ? { npm: true, yarn: false } : { npm: true, yarn: true };
+      loadNpmDependencies(packageManagers, destinationDir, unbundledKeys);
       bundle.write(outputConfig).then(() => {
         postProcessBuild(argv, outputConfig);
         done(null);
