@@ -2,7 +2,7 @@
 
 const path        = require('path');
 const fs          = require('fs');
-const spawnSync   = require('child_process').spawnSync;
+const { execSync, spawnSync } = require('child_process');
 
 const deepAssign  = require('deep-assign');
 const rollup      = require('rollup');
@@ -16,6 +16,7 @@ const builtins    = require('builtin-modules');
 const rimraf      = require('rimraf');
 
 const tryLoad     = require('../../common/try-load.js');
+const { BETTY_DEFAULT_RUNTIME } = require('../../common/constants.js');
 const createHandler = require('../lib/handler.js');
 
 exports.command = 'build';
@@ -42,6 +43,10 @@ exports.builder = {
     boolean:        true,
     describe:       'Force use of npm for installing external dependencies. Default is to first try yarn and fall back to npm',
   },
+  nvm: {
+    boolean:        true,
+    describe:       'Run nvm use to select node version that matches configured runtime',
+  },
 };
 
 function writePackageJson(target, unbundledKeys) {
@@ -57,20 +62,43 @@ function writePackageJson(target, unbundledKeys) {
   }, null, 2));
 }
 
-function _npmInstall(target) {
-  const res = spawnSync('npm', [ 'install', '--production' ], {
-    stdio:      'inherit',
-    cwd:        target + '/',
-  });
-  return res;
+function _getCommand(homeDirectory, nvmUse, target, packageManagerCommand) {
+  const cmds = [];
+  cmds.push(`cd ${target} && `);
+  if (nvmUse) {
+    [
+      '.bash_profile',
+      '.zshrc',
+      '.profile',
+      '.bashrc',
+    ].forEach(profile => {
+      cmds.push(`[[ -f ${homeDirectory}/${profile} ]] && source ${homeDirectory}/${profile};`);
+    });
+    cmds.push(`nvm use ${nvmUse};`);
+    // an assertion runs below, but for debug, conditionally output node version
+    if (process.env.BETTY_WRITE_NODE_VERSION) {
+      cmds.push(`node -e 'require("fs").writeFileSync("${target}/node.txt", process.version);process.exit(0);';`);
+      global.log.debug(`writing node version here: ${target}/node.txt`);
+    }
+    cmds.push(`node -e 'require("assert").ok(process.version.indexOf("v${nvmUse}.") === 0)' && `);
+  }
+  cmds.push(packageManagerCommand);
+  return cmds.join('');
 }
 
-function _yarnInstall(target) {
-  const res = spawnSync('yarn', {
+function _npmInstall(nvmUse, target, commands) {
+  const cmd = _getCommand(process.env.HOME, nvmUse, target, `npm install ${commands || ''}`);
+  global.log.debug({ cmd }, 'npm install command');
+  return execSync(cmd, {
     stdio:      'inherit',
     cwd:        target + '/',
   });
-  return res;
+}
+
+function _yarnInstall(nvmUse, target, commands) {
+  const cmd = _getCommand(process.env.HOME, nvmUse, target, `yarn install ${commands || ''}`);
+  global.log.debug({ cmd }, 'yarn install command');
+  return execSync(cmd);
 }
 
 const _validPackageManagerCommands = [ 'yarn', 'npm' ];
@@ -78,38 +106,43 @@ function _packageManagerExists(command) {
   if (_validPackageManagerCommands.indexOf(command) < 0) { // shouldn't be possible
     throw new Error('not a valid package manager command');
   }
-  // both npm and yarn support -v so this should let us test their existence
-  const res = spawnSync(command, [ '-v' ]);
+  const res = spawnSync('command', [ '-v', command ]);
   return res.status === 0;
 }
 
-function installExternalDeps(packageManagers, target) {
+function installExternalDeps(options) {
+  const { packageManagers, nvmUse, target, commands } = options;
   const node_modules = path.join(target, 'node_modules');
-  global.log.debug({ node_modules }, 'removing existing node_modules');
-  rimraf.sync(node_modules);
-  global.log.debug({ cwd: target }, 'running npm install');
+  // npm/yarn install should do this
+  // global.log.debug({ node_modules }, 'removing existing node_modules');
+  // rimraf.sync(node_modules);
   const yarnAvailable = packageManagers.yarn && _packageManagerExists('yarn');
   const npmAvailable = packageManagers.npm && _packageManagerExists('npm');
-  let result;
-  // prefer yarn
-  if (yarnAvailable) {
-    global.log.debug({ cwd: target, command: 'yarn' }, 'installing dependencies');
-    result = _yarnInstall(target);
+  global.log.debug({ yarnAvailable, npmAvailable }, 'available package managers');
+  try {
+    // prefer yarn
+    if (yarnAvailable) {
+      global.log.debug({ cwd: target, command: 'yarn' }, 'installing dependencies');
+      _yarnInstall(nvmUse, target, commands);
+    }
+    else if (npmAvailable) {
+      global.log.debug({ cwd: target, command: 'npm' }, 'installing dependencies');
+      _npmInstall(nvmUse, target, commands);
+    }
+    else {
+      throw new Error('no package manager selected; this should not happen');
+    }
   }
-  else if (npmAvailable) {
-    global.log.debug({ cwd: target, command: 'npm' }, 'installing dependencies');
-    result = _npmInstall(target);
+  catch (err) {
+    if (err.message.indexOf('Command failed') > -1) {
+      global.log.warn({ err }, 'package manager exited with non-zero');
+      return;
+    }
+    else {
+      throw err;
+    }
   }
-  else {
-    throw new Error('no package manager configured; this should not be possible');
-  }
-  if (result.status === 0) {
-    global.log.debug('npm install success');
-  }
-  else {
-    global.log.warn({ code: result.status }, 'npm exited with non-zero');
-    global.log.trace(result, 'spawn sync response');
-  }
+  global.log.debug('package manager install success');
 }
 
 function removeExternal(target, externals) {
@@ -137,11 +170,12 @@ function patchBundle(outputConfig) {
   global.log.debug({ config: outputConfig }, 'patched output written');
 }
 
-function loadNpmDependencies(packageManagers, target, unbundledKeys) {
+function loadExternalDependencies(options) {
+  const { packageManagers, nvmUse, target, unbundledKeys, commands } = options;
   if (unbundledKeys.length) {
-    global.log.debug({ keys: unbundledKeys }, 'processing unbundled');
+    global.log.debug({ keys: unbundledKeys, packageManagers, nvmUse, commands }, 'processing unbundled');
     writePackageJson(target, unbundledKeys);
-    installExternalDeps(packageManagers, target);
+    installExternalDeps({ packageManagers, nvmUse, target, commands });
     removeExternal(target, [ 'aws-sdk' ]);
   }
 }
@@ -169,6 +203,20 @@ function postProcessBuild(argv, outputConfig) {
     patchBundle(outputConfig);
   }
   global.log.info('build ready');
+}
+
+function getNodeVersionForRuntime(runtime) {
+  runtime = runtime || BETTY_DEFAULT_RUNTIME;
+  switch (runtime) {
+    case 'nodejs8.10':
+      return '8.10';
+    case 'nodejs6.10':
+      return '6.10';
+    case 'nodejs4.3':
+      return '4.3';
+    default:
+      throw new Error('unable to determine runtime');
+  }
 }
 
 exports.handler = createHandler((argv, done) => {
@@ -239,16 +287,27 @@ exports.handler = createHandler((argv, done) => {
   }
   else {
     rollup.rollup(buildConfig).then(bundle => {
-      if (argv.analyze) {
-        console.log('\n\n');
-        analyzer.formatted(bundle).then(console.log).catch(console.error);
-      }
-      global.log.trace({ destinationDir, unbundledKeys }, 'loading npm dependencies');
-      const packageManagers = argv.npm ? { npm: true, yarn: false } : { npm: true, yarn: true };
-      loadNpmDependencies(packageManagers, destinationDir, unbundledKeys);
-      bundle.write(outputConfig).then(() => {
-        postProcessBuild(argv, outputConfig);
-        done(null);
+      // break out of node promise error handling
+      // swallowing errors
+      setImmediate(() => {
+        if (argv.analyze) {
+          console.log('\n\n');
+          analyzer.formatted(bundle).then(console.log).catch(console.error);
+        }
+        global.log.trace({ destinationDir, unbundledKeys }, 'loading external dependencies');
+        const packageManagers = argv.npm ? { npm: true, yarn: false } : { npm: true, yarn: true };
+        const nvmUse = argv.nvm ? getNodeVersionForRuntime(global.config.configuration.runtime) : null;
+        loadExternalDependencies({
+          packageManagers,
+          nvmUse,
+          target: destinationDir,
+          unbundledKeys,
+          commands: global.betty.build.packgeManagerCommands,
+        });
+        bundle.write(outputConfig).then(() => {
+          postProcessBuild(argv, outputConfig);
+          done(null);
+        });
       });
     });
   }

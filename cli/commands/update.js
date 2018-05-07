@@ -10,7 +10,9 @@ const async         = require('async');
 const arn           = require('../../common/arn.js');
 const roles         = require('../../common/roles.js');
 const policies      = require('../../common/policies.js');
+const { BETTY_DEFAULT_RUNTIME } = require('../../common/constants.js');
 const createHandler = require('../lib/handler.js');
+
 
 exports.command = 'update';
 exports.desc    = 'Uploads the contents of dist to lambda as a new function version';
@@ -89,7 +91,7 @@ function addConfigParams(params, role, config, settings) {
     Handler:            settings.entry || 'index.handler',
     MemorySize:         settings.memory || 128,
     Role:               role,
-    Runtime:            settings.runtime || 'nodejs6.10',
+    Runtime:            settings.runtime || BETTY_DEFAULT_RUNTIME,
     Timeout:            settings.timeout || 15,
     DeadLetterConfig:   config.deadLetterQueue ? { TargetArn: expandDeadLetterQueueName(config.deadLetterQueue) } : null,
     Environment:        settings.environment ? { Variables: createEnvironmentVars(settings.environment, { betty_env: global.betty.env }) } : null,

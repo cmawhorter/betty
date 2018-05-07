@@ -19,7 +19,11 @@ global.betty = global.BETTY = deepAssign({
     global_policy:    'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole',
   },
   registry:           null,
-  build:              {},
+  build: {
+    // optionally pass commands to the package manager installer
+    // e.g. '--ignore-engines'
+    packgeManagerCommands: '--production',
+  },
 }, userProjectConfig);
 
 // override if arg on cli.  this overrides betty_env if it exists
