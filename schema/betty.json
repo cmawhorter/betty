@@ -1,6 +1,7 @@
 {
   "$schema":                "http://json-schema.org/draft-04/schema#",
   "type":                   "object",
+  "additionalProperties":   false,
   "properties": {
     "env": {
       "$ref":               "#/definitions/identifier"
@@ -65,7 +66,7 @@
   },
   "definitions": {
     "identifier": {
-      "type":               "string",
+      "type":               [ "string", "null" ],
       "minLength":          1,
       "pattern":            "^[\\w\\d][\\w\\d-]*$"
     }

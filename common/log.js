@@ -1,5 +1,7 @@
 'use strict';
 
+if (!global.betty) throw new Error('this file must be included AFTER global.betty is set');
+
 const bunyan        = require('bunyan');
 const PrettyStream  = require('bunyan-prettystream');
 

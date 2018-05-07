@@ -15,7 +15,6 @@ exports.builder = {
   region: {
     array:          true,
     describe:       'AWS region to target',
-    default:        global.betty.aws.region,
   },
   all: {
     boolean:        true,
@@ -102,6 +101,7 @@ exports.handler = createHandler((argv, done) => {
   if (!/^\d{4}\-\d{2}\-\d{2}$/.test(argv.version)) {
     throw new Error(`version is required and must be in the formay of YYYY-DD-MM: ${argv.version}`);
   }
+  argv.region = argv.region || global.betty.aws.region;
   let regions = argv.all ? global.config.region : argv.region;
   if (!Array.isArray(regions)) {
     regions = [ regions ];

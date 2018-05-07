@@ -9,7 +9,7 @@ const getAccountId  = require('../common/account-id.js');
 
 const boot = () => {
   resource.load();
-  global.log.trace({ config: global.config, env: global.betty }, 'betty env');
+  global.log.trace({ config: global.config }, 'betty env');
   require('./cli.js');
 };
 

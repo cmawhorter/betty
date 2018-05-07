@@ -90,9 +90,6 @@ function installExternalDeps(packageManagers, target) {
   global.log.debug({ cwd: target }, 'running npm install');
   const yarnAvailable = packageManagers.yarn && _packageManagerExists('yarn');
   const npmAvailable = packageManagers.npm && _packageManagerExists('npm');
-  const node_modules = path.join(target, 'node_modules');
-  global.log.debug({ node_modules }, 'removing existing node_modules');
-  rimraf.sync(node_modules);
   let result;
   // prefer yarn
   if (yarnAvailable) {
