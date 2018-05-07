@@ -24,6 +24,7 @@ global.betty = global.BETTY = deepAssign({
     // e.g. '--ignore-engines'
     packgeManagerCommands: '--production',
   },
+  hooks:              {},
 }, userProjectConfig);
 
 // override if arg on cli.  this overrides betty_env if it exists

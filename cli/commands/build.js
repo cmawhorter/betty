@@ -17,6 +17,7 @@ const rimraf      = require('rimraf');
 
 const tryLoad     = require('../../common/try-load.js');
 const { BETTY_DEFAULT_RUNTIME } = require('../../common/constants.js');
+const { invokeHook } = require('../../common/hooks.js');
 const createHandler = require('../lib/handler.js');
 
 exports.command = 'build';
@@ -207,6 +208,7 @@ function postProcessBuild(argv, outputConfig) {
     patchBundle(outputConfig);
   }
   global.log.info('build ready');
+  invokeHook('postbuild', { argv });
 }
 
 function getNodeVersionForRuntime(runtime) {
@@ -225,6 +227,7 @@ function getNodeVersionForRuntime(runtime) {
 
 exports.handler = createHandler((argv, done) => {
   global.log.info('build started');
+  invokeHook('prebuild', { argv });
   global.log.debug({ argv }, 'arguments');
   let destination         = argv.main ? path.resolve(argv.main) : path.join(process.cwd(), 'dist/index.js');
   let destinationDir      = path.dirname(destination);

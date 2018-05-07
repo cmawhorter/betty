@@ -11,8 +11,8 @@ const arn           = require('../../common/arn.js');
 const roles         = require('../../common/roles.js');
 const policies      = require('../../common/policies.js');
 const { BETTY_DEFAULT_RUNTIME } = require('../../common/constants.js');
+const { invokeHook } = require('../../common/hooks.js');
 const createHandler = require('../lib/handler.js');
-
 
 exports.command = 'update';
 exports.desc    = 'Uploads the contents of dist to lambda as a new function version';
@@ -134,6 +134,7 @@ function getExistingFunction(lambda, FunctionName, next) {
 
 exports.handler = createHandler((argv, done) => {
   global.log.info({ region: global.betty.aws.region }, 'update started');
+  invokeHook('preupdate', { argv });
   global.log.debug({ argv, config: global.config }, 'settings');
   let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
   try {
@@ -247,6 +248,7 @@ exports.handler = createHandler((argv, done) => {
     }
     global.log.info('update complete');
     global.log.debug(Object.assign({}, state, { bundle: '[redacted]' }), 'final state');
+    invokeHook('postupdate', { argv, result: state });
     done(null);
   });
 });

@@ -6,6 +6,7 @@ const AWS           = require('aws-sdk');
 const async         = require('async');
 const waterfall     = require('steppin');
 const createHandler = require('../lib/handler.js');
+const { invokeHook } = require('../../common/hooks.js');
 
 const STABLE_ALIAS = 'LATEST_STABLE';
 
@@ -98,6 +99,8 @@ function updateStableAlias(lambda, functionName, functionVersion, callback) {
 }
 
 exports.handler = createHandler((argv, done) => {
+  global.log.debug('publishing started');
+  invokeHook('prepublish', { argv });
   if (!/^\d{4}\-\d{2}\-\d{2}$/.test(argv.version)) {
     throw new Error(`version is required and must be in the formay of YYYY-DD-MM: ${argv.version}`);
   }
@@ -106,17 +109,17 @@ exports.handler = createHandler((argv, done) => {
   if (!Array.isArray(regions)) {
     regions = [ regions ];
   }
-  global.log.debug('publishing started');
   async.parallel(argv.region.map(region => {
     let lambda = new AWS.Lambda({ region: region });
     global.log.info({ region, version: argv.version }, 'publishing version');
     return async.apply(publishLambdaVersion, lambda, global.config.name, argv.version);
-  }), (err) => {
+  }), err => {
     if (err) {
       global.log.error(err);
       return done(err);
     }
     global.log.info({ region: argv.region }, 'published to aws');
+    invokeHook('postpublish', { argv });
     if (global.betty.registry) {
       runPublishToRegistryCommand((err) => {
         if (err) {
@@ -127,6 +130,8 @@ exports.handler = createHandler((argv, done) => {
         done();
       });
     }
-    else done();
+    else {
+      done();
+    }
   });
 });

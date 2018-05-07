@@ -62,6 +62,23 @@
     },
     "utils": {
       "type":               "object"
+    },
+    "hooks": {
+      "type":               "object",
+      "properties": {
+        "prebuild": {
+        },
+        "postbuild": {
+        },
+        "preupdate": {
+        },
+        "postupdate": {
+        },
+        "prepublish": {
+        },
+        "postpublish": {
+        }
+      }
     }
   },
   "definitions": {
