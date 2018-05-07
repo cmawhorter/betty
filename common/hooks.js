@@ -12,15 +12,16 @@ const invokeHookExec = exports.invokeHookExec = function invokeHookExec(hook, en
     envVars['betty_' + key.toLowerCase()] = '' + options[key];
   });
   execSync(hook, {
-    cwd: options.cwd,
-    env: envVars,
+    stdio:      'inherit',
+    env:        envVars,
   });
 };
 
 const invokeHook = exports.invokeHook = function invokeHook(eventName, options) {
-  global.log.debug({ eventName, hooks: global.betty.hooks }, 'attempting to invoke hook');
+  global.log.debug({ eventName }, 'attempting to invoke hook');
   const hook = global.betty.hooks[eventName];
   if (!hook) return;
+  global.log.info({ eventName }, 'invoking hook');
   if (typeof hook === 'string') {
     invokeHookExec(hook, global.betty, global.config, options);
   }

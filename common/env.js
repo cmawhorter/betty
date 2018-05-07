@@ -1,15 +1,33 @@
 'use strict';
 
+const path          = require('path');
 const deepAssign    = require('deep-assign');
 const schema        = require('./schema.js');
 const tryLoad       = require('./try-load.js');
 
+const userProjectConfigJs   = path.join(process.cwd(), 'betty.js');
+const userProjectConfigJson = path.join(process.cwd(), 'betty.json');
+const userProjectConfigRc   = path.join(process.cwd(), '.bettyrc');
+
 // attempt to load betty.json, betty.js from cwd.  fall back to deprecated .bettyrc in cwd
-const userProjectConfig = tryLoad.find('betty', process.cwd()) || tryLoad.find('.bettyrc');
+let userProjectConfig, userProjectConfigType;
+if (userProjectConfig = tryLoad.js(userProjectConfigJs)) {
+  userProjectConfigType = 'js';
+}
+else if (userProjectConfig = tryLoad.json(userProjectConfigJson)) {
+  userProjectConfigType = 'json';
+}
+else if (userProjectConfig = tryLoad.json(userProjectConfigRc)) {
+  userProjectConfigType = 'deprecated';
+}
+else {
+  userProjectConfig = {};
+  userProjectConfigType = null;
+}
 
 const LOG_LEVEL = process.env.betty_log_level || process.env.LOG_LEVEL || 'info';
 
-global.betty = global.BETTY = deepAssign({
+global.betty = global.BETTY = deepAssign({}, {
   env:                process.env.betty_env || null,
   log_level:          process.env.DEBUG ? 'debug' : LOG_LEVEL,
   aws: {
@@ -78,6 +96,16 @@ if (null === global.betty.env) {
 const getAccountId = require('./account-id.js');
 require('./app-storage.js');
 require('./log.js');
+
+global.log.debug({
+  userProjectConfig,
+  userProjectConfigType,
+  attempts: {
+    userProjectConfigJs,
+    userProjectConfigJson,
+    userProjectConfigRc
+  },
+}, 'user config loaded');
 
 // if no aws account id provided -- but a profile is -- expand the account id
 const configuredAwsProfile = global.betty.aws.profile;

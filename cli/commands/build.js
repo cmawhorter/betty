@@ -176,12 +176,14 @@ function patchBundle(outputConfig) {
 }
 
 function loadExternalDependencies(options) {
+  invokeHook('prebuildinstall', { options });
   const { packageManagers, nvmUse, target, unbundledKeys, commands } = options;
   if (unbundledKeys.length) {
     global.log.debug({ keys: unbundledKeys, packageManagers, nvmUse, commands }, 'processing unbundled');
     writePackageJson(target, unbundledKeys);
     installExternalDeps({ packageManagers, nvmUse, target, commands });
     removeExternal(target, [ 'aws-sdk' ]);
+    invokeHook('postbuildinstall', { options });
   }
 }
 
@@ -275,6 +277,7 @@ exports.handler = createHandler((argv, done) => {
     format:       'cjs',
     sourcemap:    argv['no-sourcemaps'] ? false : true,
   };
+  invokeHook('prebuildrollup', { buildConfig });
   global.log.debug({ rollup: buildConfig }, 'build config');
   global.log.info('starting rollup');
   if (argv.watch) {
@@ -297,6 +300,7 @@ exports.handler = createHandler((argv, done) => {
       // break out of node promise error handling
       // swallowing errors
       setImmediate(() => {
+        invokeHook('postbuildrollup', { buildConfig, bundle });
         if (argv.analyze) {
           console.log('\n\n');
           analyzer.formatted(bundle).then(console.log).catch(console.error);
@@ -313,6 +317,7 @@ exports.handler = createHandler((argv, done) => {
         });
         bundle.write(outputConfig).then(() => {
           postProcessBuild(argv, outputConfig);
+          global.log.info('build done');
           done(null);
         });
       });

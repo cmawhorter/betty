@@ -66,18 +66,16 @@
     "hooks": {
       "type":               "object",
       "properties": {
-        "prebuild": {
-        },
-        "postbuild": {
-        },
-        "preupdate": {
-        },
-        "postupdate": {
-        },
-        "prepublish": {
-        },
-        "postpublish": {
-        }
+        "prebuild":         {},
+        "prebuildrollup":   {},
+        "prebuildinstall":  {},
+        "postbuildinstall": {},
+        "postbuildrollup":  {},
+        "postbuild":        {},
+        "preupdate":        {},
+        "postupdate":       {},
+        "prepublish":       {},
+        "postpublish":      {}
       }
     }
   },

@@ -3,6 +3,15 @@
 const path = require('path');
 const fs = require('fs');
 
+const LOG_ERRORS = process.env.BETTY_LOG_READ_ERRORS;
+
+// removes comments from json lines
+const removeComments = json => {
+  return json.split(/\n/).map(line => {
+    return 0 === line.trim().indexOf('//') ? null : line;
+  }).filter(line => null !== line).join('\n');
+};
+
 // f must be absolute
 const tryLoad = module.exports = {
   exists: function(f) {
@@ -10,6 +19,9 @@ const tryLoad = module.exports = {
       return fs.readFileSync(f);
     }
     catch (err) {
+      if (LOG_ERRORS) {
+        console.log({ err, f }, 'attempt to load file failed');
+      }
       return false;
     }
   },
@@ -20,27 +32,24 @@ const tryLoad = module.exports = {
       return require(f);
     }
     catch (err) {
-      global.log.error({ err, f }, 'unable to load js');
+      if (LOG_ERRORS) {
+        console.log({ err, f }, 'unable to load js');
+      }
     }
     return null;
   },
   json: function(f) {
-    let data = tryLoad.exists(f);
+    const data = tryLoad.exists(f);
     if (!data) return null;
     try {
-      return JSON.parse(data.toString('utf8'));
+      const json = removeComments(data.toString('utf8'));
+      return JSON.parse(json);
     }
     catch (err) {
-      global.log.error({ err, f }, 'unable to load json');
+      if (LOG_ERRORS) {
+        console.log({ err, f }, 'unable to load json');
+      }
     }
     return null;
-  },
-  // prefers json. attempts to load file.json or file.js
-  // in a target directory that is cwd if not provided
-  find: function(basename, directory) {
-    directory = directory || process.cwd();
-    const js    = path.join(directory, `${basename}.js`);
-    const json  = path.join(directory, `${basename}.json`);
-    return tryLoad.json(json) || tryLoad.js(js);
   },
 };
