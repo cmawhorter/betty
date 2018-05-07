@@ -25,6 +25,10 @@ exports.builder = {
     boolean:        true,
     default:        false,
   },
+  compress: {
+    describe:       'If compression should be used.  Otherwise zip created with no compression for best performance.',
+    boolean:        true,
+  }
 };
 
 function createEnvironmentVars(obj, extend) {
@@ -57,11 +61,9 @@ function expandDeadLetterQueueName(arnOrQueueName) {
   }
 }
 
-function createCodeBundle(dist, next) {
+function createCodeBundle(dist, options, next) {
   let output = new streamBuffers.WritableStreamBuffer();
-  let archive = archiver('zip', {
-    store: true,
-  });
+  let archive = archiver('zip', options);
   output.on('finish', () => next(null, output.getContents()));
   archive.on('error', next);
   archive.pipe(output);
@@ -144,8 +146,12 @@ exports.handler = createHandler((argv, done) => {
     global.log.warn({ err, dist }, 'error reading dist - did you forget to run betty build first?');
     return done(err);
   }
+  const codeBundleOptions = {
+    // if compress passed disable store
+    store: argv.compress ? false : true,
+  };
   if (argv.test) {
-    createCodeBundle(dist, (err, bufferCode) => {
+    createCodeBundle(dist, codeBundleOptions, (err, bufferCode) => {
       if (err) {
         global.log.error({ err }, 'output code bundle failed');
         return done(err);
@@ -209,7 +215,7 @@ exports.handler = createHandler((argv, done) => {
     },
     bundle: (state, next) => {
       global.log.debug('starting bundle');
-      createCodeBundle(dist, (err, bufferCode) => {
+      createCodeBundle(dist, codeBundleOptions, (err, bufferCode) => {
         if (err) {
           global.log.error({ err }, 'code bundle failed');
           return next(err);
