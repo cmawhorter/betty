@@ -87,7 +87,7 @@ function addConfigParams(params, role, config, settings) {
     Handler:            settings.entry || 'index.handler',
     MemorySize:         settings.memory || 128,
     Role:               role,
-    Runtime:            settings.runtime || 'nodejs4.3',
+    Runtime:            settings.runtime || 'nodejs6.10',
     Timeout:            settings.timeout || 15,
     DeadLetterConfig:   config.deadLetterQueue ? { TargetArn: expandDeadLetterQueueName(config.deadLetterQueue) } : null,
     Environment:        settings.environment ? { Variables: createEnvironmentVars(settings.environment, { betty_env: global.betty.env }) } : null,
