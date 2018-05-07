@@ -47,6 +47,10 @@ exports.builder = {
     boolean:        true,
     describe:       'Run nvm use to select node version that matches configured runtime',
   },
+  'no-sourcemaps': {
+    boolean:        true,
+    describe:       'Pass this option to disable sourcemaps from being created',
+  }
 };
 
 function writePackageJson(target, unbundledKeys) {
@@ -266,7 +270,7 @@ exports.handler = createHandler((argv, done) => {
   let outputConfig = {
     file:         destination,
     format:       'cjs',
-    sourcemap:    true,
+    sourcemap:    argv['no-sourcemaps'] ? false : true,
   };
   global.log.debug({ rollup: buildConfig }, 'build config');
   global.log.info('starting rollup');
