@@ -29,11 +29,9 @@ const resource = module.exports = {
       global.config = {};
       global.config_type = null;
     }
-    if (config) {
-      config.resources = Object.assign({}, config.resources, tryLoad.json(resources));
-      config.configuration = config.configuration || {};
-      resource.validate(config);
-    }
+    config.resources = Object.assign({}, config.resources, tryLoad.json(resources));
+    config.configuration = config.configuration || {};
+    resource.validate(config);
   },
 
   writeResources: function() {
