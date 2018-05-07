@@ -37,6 +37,11 @@
         }
       }
     },
+    "update": {
+      "type":               "object",
+      "properties": {
+      }
+    },
     "registry": {
       "type":               [ "object", "null" ],
       "required":           [ "command" ],

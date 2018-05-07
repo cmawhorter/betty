@@ -42,6 +42,7 @@ global.betty = global.BETTY = deepAssign({}, {
     // e.g. '--ignore-engines'
     packgeManagerCommands: '--production',
   },
+  update:             {},
   hooks:              {},
 }, userProjectConfig);
 

@@ -277,7 +277,17 @@ exports.handler = createHandler((argv, done) => {
     format:       'cjs',
     sourcemap:    argv['no-sourcemaps'] ? false : true,
   };
-  invokeHook('prebuildrollup', { buildConfig });
+  invokeHook('prebuildrollup', {
+    // send the build config that will be used for modifications
+    buildConfig,
+    // also expose rollup and plugins
+    rollup,
+    babel,
+    nodeResolve,
+    commonjs,
+    json,
+    analyzer,
+  });
   global.log.debug({ rollup: buildConfig }, 'build config');
   global.log.info('starting rollup');
   if (argv.watch) {
