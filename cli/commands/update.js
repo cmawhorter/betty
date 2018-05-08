@@ -134,7 +134,7 @@ function getExistingFunction(lambda, FunctionName, next) {
 
 exports.handler = createHandler((argv, done) => {
   global.log.info({ region: global.betty.aws.region }, 'update started');
-  argv.compress = 'compress' in global.config.update ? global.config.update.compress : false;
+  argv.compress = 'compress' in global.betty.update ? global.betty.update.compress : false;
   invokeHook('preupdate', { argv });
   global.log.debug({ argv, config: global.config }, 'settings');
   let dist = path.join(process.cwd(), argv.main ? path.dirname(argv.main) : 'dist');
