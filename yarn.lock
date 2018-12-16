@@ -2008,7 +2008,7 @@ path-type@^1.0.0:
     pify "^2.0.0"
     pinkie-promise "^2.0.0"
 
-"pbcw@github:stampr/pretty-bunyan-cloudwatch-logs":
+"pbcw@github:stampr/pretty-bunyan-cloudwatch-logs#1.1.0":
   version "1.1.0"
   resolved "https://codeload.github.com/stampr/pretty-bunyan-cloudwatch-logs/tar.gz/55d8cc6a1d6d7b441be51da8ee154513b5e82186"
   dependencies:
