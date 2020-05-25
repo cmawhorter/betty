@@ -1,18 +1,8 @@
-'use strict';
-
-const path          = require('path');
-const spawn         = require('child_process').spawn;
-const AWS           = require('aws-sdk');
-const async         = require('async');
-const waterfall     = require('steppin');
-const createHandler = require('../lib/handler.js');
-const { invokeHook } = require('../../common/hooks.js');
-
 const STABLE_ALIAS = 'LATEST_STABLE';
 
-exports.command = 'publish <version>';
-exports.desc    = 'Publishes "$LATEST" as a new lambda version and creates an alias to the <version> specified.  If configured, this will also publish to the registry.';
-exports.builder = {
+export const command = 'publish <version>';
+export const desc    = 'Publishes "$LATEST" as a new lambda version and creates an alias to the <version> specified.  If configured, this will also publish to the registry.';
+export const builder = {
   region: {
     array:          true,
     describe:       'AWS region to target',
@@ -98,7 +88,7 @@ function updateStableAlias(lambda, functionName, functionVersion, callback) {
   });
 }
 
-exports.handler = createHandler((argv, done) => {
+export async function handler(argv) {
   global.log.debug('publishing started');
   invokeHook('prepublish', { argv });
   if (!/^\d{4}\-\d{2}\-\d{2}$/.test(argv.version)) {
@@ -134,4 +124,4 @@ exports.handler = createHandler((argv, done) => {
       done();
     }
   });
-});
+}

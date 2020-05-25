@@ -1,22 +1,7 @@
-'use strict';
 
-const fs            = require('fs');
-const path          = require('path');
-const streamBuffers = require('stream-buffers');
-const AWS           = require('aws-sdk');
-const archiver      = require('archiver');
-const waterfall     = require('steppin');
-const async         = require('async');
-const arn           = require('../../common/arn.js');
-const roles         = require('../../common/roles.js');
-const policies      = require('../../common/policies.js');
-const { BETTY_DEFAULT_RUNTIME } = require('../../common/constants.js');
-const { invokeHook } = require('../../common/hooks.js');
-const createHandler = require('../lib/handler.js');
-
-exports.command = 'update';
-exports.desc    = 'Uploads the contents of dist to lambda as a new function version';
-exports.builder = {
+export const command = 'update';
+export const desc    = 'Uploads the contents of dist to lambda as a new function version';
+export const builder = {
   test: {
     describe:       'Output bundled code to build directory and does not contact AWS',
     boolean:        true,
@@ -132,7 +117,7 @@ function getExistingFunction(lambda, FunctionName, next) {
   lambda.getFunctionConfiguration(params, (err, data) => next(null, err ? false : data));
 }
 
-exports.handler = createHandler((argv, done) => {
+export async function handler(argv) {
   global.log.info({ region: global.betty.aws.region }, 'update started');
   argv.compress = 'compress' in global.betty.update ? global.betty.update.compress : false;
   invokeHook('preupdate', { argv });
@@ -174,7 +159,8 @@ exports.handler = createHandler((argv, done) => {
         return next(null, null);
       }
       global.log.debug('starting role');
-      roles.createLambdaRole(global.config.name, (err, data, justCreated) => {
+      // TODO: this value passed back was refactored and this just stubs out the change
+      roles.createLambdaRole(global.config.name, (err, { data, created: justCreated }) => {
         if (err) return next(err);
         global.log.debug({ role: data.Role }, 'got role');
         // HACK: if role was just created it can take a few seconds to become
@@ -252,4 +238,4 @@ exports.handler = createHandler((argv, done) => {
     invokeHook('postupdate', { argv, result: state });
     done(null);
   });
-});
+}

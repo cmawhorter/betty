@@ -1,15 +1,9 @@
-'use strict';
-
-const fs              = require('fs');
-const path            = require('path');
-const createServer    = require('lambda-emulator');
-const createHandler   = require('../lib/handler.js');
 
 const exampleEvalHandler = function(event, context, callback) { callback(null, { hello: 'world' }); };
 
-exports.command = 'serve';
-exports.desc    = 'Starts a local web server that emulates lambda to allow for locally invoking the function';
-exports.builder = {
+export const command = 'serve';
+export const desc    = 'Starts a local web server that emulates lambda to allow for locally invoking the function';
+export const builder = {
   type: {
     alias:          't',
     describe:       'Type of lambda handler to test',
@@ -40,7 +34,7 @@ function initWatcher(compiledHandler, reload) {
 }
 
 
-exports.handler = createHandler(function(argv, done) {
+export async function handler(argv) {
   // options for lambda-emulator
   let options = {
     handler:  null,
@@ -75,4 +69,4 @@ exports.handler = createHandler(function(argv, done) {
   }
   createServer(options);
   done(null);
-});
+}

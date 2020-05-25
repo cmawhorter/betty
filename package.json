@@ -1,13 +1,21 @@
 {
   "name": "bty",
-  "version": "1.0.0-alpha.3",
+  "version": "2.0.0",
   "description": "Simple command line utility for developing and deploying AWS Lambda functions.",
+  "main": "./lib/main.js",
   "bin": {
-    "bty": "./cli/index.js",
-    "betty": "./cli/index.js"
+    "bty": "./cli/main.js",
+    "betty": "./cli/main.js"
   },
   "scripts": {
-    "test": "mocha -r ./test/lib/helper test"
+    "preinstall": "node -e 'if(/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"This repo requires npm\")'",
+    "lintcli": "./node_modules/.bin/eslint ./cli",
+    "lintcommon": "./node_modules/.bin/eslint ./common",
+    "linttests": "./node_modules/.bin/eslint ./test",
+    "lint": "npm run lintcli && npm run lintcommon && npm run linttests",
+    "pretest": "npm run lint",
+    "test": "./node_modules/.bin/mocha -r ./test/lib/helper test",
+    "coverage": "./node_modules/.bin/nyc npm run test"
   },
   "author": {
     "name": "Cory Mawhorter",
@@ -23,34 +31,27 @@
   },
   "license": "MIT",
   "dependencies": {
-    "ajv": "^4.11.2",
-    "archiver": "^1.3.0",
-    "async": "^2.1.4",
-    "babel-plugin-external-helpers": "^6.22.0",
-    "babel-preset-es2015": "^6.22.0",
-    "builtin-modules": "^1.1.1",
-    "bunyan": "^1.8.5",
-    "bunyan-prettystream": "^0.1.3",
-    "chokidar": "^2.0.0",
-    "deep-assign": "^2.0.0",
-    "expect": "*",
-    "lambda-emulator": "github:cmawhorter/lambda-emulator",
-    "mkdirp": "^0.5.1",
+    "ajv": "4.x",
+    "archiver": "1.x",
+    "esm": "^3.2.25",
+    "jsonc-parser": "^2.2.1",
+    "mkdirp": "1.x",
+    "rimraf": "2.x",
+    "slug": "3.x",
+    "stream-buffers": "3.x",
+    "urn-lib": "1.x",
+    "yargs": "15.x"
+  },
+  "peerDependencies": {
+    "aws-sdk": "2.x"
+  },
+  "devDependencies": {
+    "@rollup/plugin-json": "^4.0.3",
+    "aws-sdk": "2.x",
+    "chai": "*",
+    "eslint": "*",
     "mocha": "*",
-    "pbcw": "github:stampr/pretty-bunyan-cloudwatch-logs#1.1.0",
-    "require-dir": "^0.3.1",
-    "rimraf": "^2.5.4",
-    "rollup": "^0.53.4",
-    "rollup-analyzer": "^1.0.1",
-    "rollup-plugin-babel": "^2.7.1",
-    "rollup-plugin-commonjs": "^7.0.0",
-    "rollup-plugin-json": "^2.1.0",
-    "rollup-plugin-node-resolve": "^2.0.0",
-    "slug": "^0.9.1",
-    "steppin": "^1.1.0",
-    "stream-buffers": "^3.0.1",
-    "urn-lib": "^1.1.2",
-    "yargs": "^6.6.0"
+    "nyc": "*"
   },
   "keywords": [
     "aws",

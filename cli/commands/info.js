@@ -1,10 +1,7 @@
-'use strict';
-
-const createHandler = require('../lib/handler.js');
-
-exports.command = 'info';
-exports.desc    = 'Outputs info about the current project context';
-exports.builder = {};
-exports.handler = createHandler(function(argv) {
-  process.stdout.write(JSON.stringify(global.config, null, 2));
-});
+export const command = 'info';
+export const desc    = 'Outputs info about the current project context';
+export const builder = {};
+export async function handler(argv) {
+  console.log('info handler');
+  await argv.betty.info();
+}

@@ -1,12 +1,6 @@
-'use strict';
-
-const path          = require('path');
-const spawn         = require('child_process').spawn;
-const createHandler = require('../lib/handler.js');
-
-exports.command = 'logs';
-exports.desc    = 'Streams the cloudwatch log for the function';
-exports.builder = {
+export const command = 'logs';
+export const desc    = 'Streams the cloudwatch log for the function';
+export const builder = {
   region: {
     describe:       'AWS region to target',
   },
@@ -18,7 +12,7 @@ exports.builder = {
     describe:       'The CloudWatch log name.',
   },
 };
-exports.handler = createHandler((argv, done) => {
+export async function handler(argv) {
   // pull defaults from env
   argv.region   = argv.region || global.betty.aws.region;
   argv.profile  = argv.profile || global.betty.aws.profile;
@@ -36,4 +30,4 @@ exports.handler = createHandler((argv, done) => {
     cwd:            global.betty.utils.cwd,
   });
   done(null);
-});
+}
