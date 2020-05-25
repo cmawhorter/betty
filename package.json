@@ -33,10 +33,12 @@
   "dependencies": {
     "ajv": "4.x",
     "archiver": "1.x",
+    "builtin-modules": "^3.1.0",
     "esm": "^3.2.25",
+    "fs-extra": "^9.0.0",
+    "inquirer": "^7.1.0",
     "jsonc-parser": "^2.2.1",
-    "mkdirp": "1.x",
-    "rimraf": "2.x",
+    "lodash": "^4.17.15",
     "slug": "3.x",
     "stream-buffers": "3.x",
     "urn-lib": "1.x",
@@ -46,7 +48,6 @@
     "aws-sdk": "2.x"
   },
   "devDependencies": {
-    "@rollup/plugin-json": "^4.0.3",
     "aws-sdk": "2.x",
     "chai": "*",
     "eslint": "*",

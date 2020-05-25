@@ -1,5 +1,6 @@
 import { ok } from 'assert';
 import { resolve as resolvePath } from 'path';
+import { inspect } from 'util';
 
 import yargs from 'yargs';
 
@@ -12,6 +13,11 @@ import { Context } from '../lib/context.js';
 
 import { readAppData, writeAppData } from './appdata.js';
 
+// providing inline wasn't working with:
+// console.dir(obj, { ...options })
+// FIXME: remove this workaround to ==^
+inspect.defaultOptions.depth = 12;
+
 const ENV_STAGES = [ 'development', 'testing', 'staging', 'production' ];
 
 const loadAccountId = async profile => {
@@ -20,6 +26,7 @@ const loadAccountId = async profile => {
     return result[profile].accountId;
   }
   else {
+    console.log('loading account id from remote');
     const accountId = await getAwsAccountId();
     writeAppData('aws.json', Object.assign({}, result, {
       [profile]: Object.assign({}, result[profile], { accountId })
@@ -47,9 +54,13 @@ yargs.middleware(async argv => {
   // it's best to use these when working with aws-sdk
   process.env.AWS_PROFILE = profile;
   process.env.AWS_REGION = region;
+  // if not using cwd we'll chdir to the target just to keep things simple
+  if (argv._[1]) {
+    process.chdir(resolvePath(argv._[1]));
+  }
   const awsAccountId = account || await loadAccountId(profile);
   const context = new Context({
-    cwd: argv._[1] && resolvePath(argv._[1]) || process.cwd(),
+    cwd: process.cwd(),
     // TODO: argv.source || 'src'
     // sourcePath,
     env: getEnv(argv),
@@ -88,6 +99,12 @@ yargs.option('profile', {
 
 yargs.option('region', {
   default: process.env.AWS_REGION,
+});
+
+yargs.option('interactive', {
+  boolean: true,
+  default: true,
+  describe: 'When disabled, will never request input and will instead exit with error',
 });
 
 yargs.commandDir('./commands');

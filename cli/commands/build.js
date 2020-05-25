@@ -1,202 +1,111 @@
+import { ok } from 'assert';
 
-// const optionalImport = async target =>
-//   import(target)
-//     .catch(err => null);
+import { Betty } from '../../lib/betty.js';
+import { PackageManagers } from '../../lib/tasks/build.js';
 
-  // static createDefaultRollupConfig({
-  //   input = 'src/main.js',
-  //   output = 'dist/index.js',
-  //   sourcemap = true,
-  //   external = [ 'aws-sdk' ],
-  // } = {}) {
-  //   const [
-  //     // it's required so we'll force an error here
-  //     // so it's immediately clear
-  //     rollup,
-  //     babel,
-  //     nodeResolve,
-  //     commonjs,
-  //     json,
-  //   ] = await Promise.all([
-  //     import('rollup'), // fail if this doesn't exist
-  //     optionalImport('@rollup/plugin-babel'),
-  //     optionalImport('@rollup/plugin-node-resolve'),
-  //     optionalImport('@rollup/plugin-commonjs'),
-  //     optionalImport('@rollup/plugin-json'),
-  //   ]);
-  //   return {
-  //     input,
-  //     external,
-  //     output: {
-  //       file:             output,
-  //       format:           'cjs',
-  //       sourcemap,
-  //     },
-  //     plugins: [
-  //       json && json(),
-  //       nodeResolve && nodeResolve({
-  //         jsnext:         true,
-  //         main:           true,
-  //       }),
-  //       commonjs && commonjs({
-  //         include:        'node_modules/**',
-  //       }),
-  //       babel && babel({
-  //         babelHelpers:   'bundled',
-  //         exclude:        'node_modules/**',
-  //         babelrc:        false
-  //       }),
-  //     ].filter(v => !!v),
-  //   }
-  // }
-
-
-// new RollupBuildTask({
-//       // TODO: pull from somewhere
-//       dependencies: {},
-//       // TODO: expose way to pass a file and read
-//       // rollupConfig,
-//     });
-//   } = {})
+import {
+  BuildContext,
+  DEPENDENCY_WILDCARD_VALUE,
+  AWSSDK_PACKAGE_NAME } from './build/build-context.js';
+import { createRollupTask } from './build/rollup.js';
+import { createWebpackTask } from './build/webpack.js';
+import { createPackageOnlyTask } from './build/package-only.js';
 
 export const command = 'build';
 export const desc    = 'Compiles and transpiles source into a lambda-ready build';
 export const builder = {
-  analyze: {
+  rollup: {
     boolean:        true,
-    describe:       'Analyze the bundle and print the results',
+    describe:       'Compile with rollup',
   },
-  watch: {
+  webpack: {
     boolean:        true,
-    describe:       'Use rollup.watch to continuously monitor for changes and build as necessary.  Only helpful during dev to test your changes with serve.',
+    describe:       'Compile with webpack',
   },
-  verbose: {
-    boolean:        true,
-    alias:          'v',
-    describe:       'Verbose output',
+  external: {
+    array:          true,
+    default:        [],
+    describe:       'Dependencies that are not bundled and need to be installed. Exact match on dependency key is allowed.  Pass "*" to include all. ',
   },
-  'skip-interop-patch': {
+  'external-builtins': {
+    default:        true,
+    describe:       'Specifically mark all node.js builtins as external. Disable with --no-external-builtins.  (You would only want to disable this if your project has a package that collides with a node.js built-in package.)',
+  },
+  'external-awssdk': {
+    default:        true,
+    describe:       'Specifically mark aws-sdk as external and do not install or bundle it. Disable with --no-external-awssdk. AWS Lambda automatically includes this package so it\'s not necessary to include in most situations.',
+  },
+  internal: {
+    array:          true,
+    default:        [ DEPENDENCY_WILDCARD_VALUE ],
+    describe:       'Dependencies that should not be installed prior to packaging. Exact match on dependency key is allowed.  Pass "*" to exclude all.',
+  },
+  alias: {
+    array:          true,
+    default:        [],
+    describe:       'Tells compiler to replace one dependency with another. Format is "from:to" e.g. from "@something/here:my-custom-here". Only applies to webpack.',
+  },
+  destination: {
+    default:        'dist',
+    describe:       'The destination directory the build task will use for the compiled result.  If it does\'t exist it\'ll be created',
+  },
+  bundle: {
+    default:        'index.js',
+    describe:       'The name of the bundle file to create.  Will be combined with destination e.g. dist/index.js',
+  },
+  sourcemap: {
     boolean:        true,
-    describe:       'Skip the (hopefully) temporary workaround for rollup cjs interop build by patching output',
+    default:        true,
+    describe:       'On by default. Pass --no-sourcemap to disable',
+  },
+  minify: {
+    boolean:        true,
+    default:        true,
+    describe:       'On by default. Pass --no-minify to disable',
+  },
+  'package-manager': {
+    choices:        Object.keys(PackageManagers),
+    default:        'npm',
+    describe:       'If your project has external dependencies this will be used to install them',
   },
   npm: {
     boolean:        true,
-    describe:       'Force use of npm for installing external dependencies. Default is to first try yarn and fall back to npm',
+    describe:       'Alias of --package-manager npm',
   },
-  nvm: {
+  yarn: {
     boolean:        true,
-    describe:       'Run nvm use to select node version that matches configured runtime',
+    describe:       'Alias of --package-manager yarn',
   },
-  'no-sourcemaps': {
+  'dry-run': {
     boolean:        true,
-    describe:       'Pass this option to disable sourcemaps from being created',
-  }
+    describe:       'Don\'t write anything and print details',
+  },
 };
 
 export async function handler(argv) {
-  global.log.info('build started');
-  invokeHook('prebuild', { argv });
-  global.log.debug({ argv }, 'arguments');
-  let destination         = argv.main ? path.resolve(argv.main) : path.join(process.cwd(), 'dist/index.js');
-  let destinationDir      = path.dirname(destination);
-  let pkgJson             = tryLoad.json(path.join(process.cwd(), 'package.json')) || {};
-  let pkgJsonDependencies = Object.keys(pkgJson.dependencies || {});
-  let unbundledKeys = Object.keys(global.betty.build.unbundled || {}).filter(unbundledKey => {
-    if (pkgJsonDependencies.indexOf(unbundledKey) > -1) {
-      global.log.trace({ dependency: unbundledKey, source: 'package.json' }, 'unbundled dependency found');
-      return true;
-    }
-    try {
-      fs.statSync(path.join(process.cwd(), 'node_modules', unbundledKey));
-      global.log.trace({ dependency: unbundledKey, source: 'node_modules' }, 'unbundled dependency found');
-      return true;
-    }
-    catch (err) {
-      global.log.trace({ dependency: unbundledKey, err }, 'unbundled dependency not found');
-    }
-    return false;
-  });
-  let defaultRollupOptions = {
-    input:              path.join(process.cwd(), argv.source || 'src/main.js'),
-    plugins: [
-      json(),
-      nodeResolve({
-        jsnext:         true,
-        main:           true,
-        skip:           [ 'aws-sdk' ].concat(builtins, unbundledKeys),
-      }),
-      commonjs({
-        include:        'node_modules/**',
-      }),
-      babel({
-        exclude:        'node_modules/**',
-        babelrc:        false,
-        presets:        [ [ 'es2015', { modules: false } ] ],
-        plugins:        [ 'external-helpers' ],
-      }),
-    ],
-    external:           [ 'aws-sdk' ].concat(builtins, unbundledKeys),
-  };
-  let buildConfig = deepAssign({}, argv.rollup || defaultRollupOptions);
-  let outputConfig = {
-    file:         destination,
-    format:       'cjs',
-    sourcemap:    argv['no-sourcemaps'] ? false : true,
-  };
-  invokeHook('prebuildrollup', {
-    // send the build config that will be used for modifications
-    buildConfig,
-    // also expose rollup and plugins
-    rollup,
-    babel,
-    nodeResolve,
-    commonjs,
-    json,
-    analyzer,
-  });
-  global.log.debug({ rollup: buildConfig }, 'build config');
-  global.log.info('starting rollup');
-  if (argv.watch) {
-    buildConfig.watch = {
-      // chokidar:       true,
-      include:        path.dirname(buildConfig.input) + '/**', // limit watching to src directory only
-      exclude:        'node_modules/**', // just in case user installing deps into src
-      clearScreen:    false,
-    };
-    buildConfig.output = outputConfig;
-    global.log.debug({ config: buildConfig }, 'watcher options');
-    let watcher = rollup.watch(buildConfig);
-    global.log.trace('attaching event handler');
-    watcher.on('event', watcherEventHandler.bind(null, () => {
-      postProcessBuild(argv, outputConfig);
-    }));
+  const { rollup, webpack } = argv;
+  ok(!rollup || !webpack, 'cannot pass both --rollup and --webpack');
+  const buildContext = await BuildContext.fromArgv(argv);
+  // prepare
+  let buildTask;
+  if (rollup) {
+    buildTask = await createRollupTask(buildContext);
+  }
+  else if (webpack) {
+    buildTask = await createWebpackTask(buildContext);
   }
   else {
-    rollup.rollup(buildConfig).then(bundle => {
-      // break out of node promise error handling
-      // swallowing errors
-      setImmediate(() => {
-        invokeHook('postbuildrollup', { buildConfig, bundle });
-        if (argv.analyze) {
-          console.log('\n\n');
-          analyzer.formatted(bundle).then(console.log).catch(console.error);
-        }
-        global.log.trace({ destinationDir, unbundledKeys }, 'loading external dependencies');
-        const packageManagers = argv.npm ? { npm: true, yarn: false } : { npm: true, yarn: true };
-        const nvmUse = argv.nvm ? getNodeVersionForRuntime(global.config.configuration.runtime) : null;
-        loadExternalDependencies({
-          packageManagers,
-          nvmUse,
-          target: destinationDir,
-          unbundledKeys,
-          commands: global.betty.build.packgeManagerCommands,
-        });
-        bundle.write(outputConfig).then(() => {
-          postProcessBuild(argv, outputConfig);
-          global.log.info('build done');
-          done(null);
-        });
-      });
-    });
+    // default build handler (no compilation)
+    buildTask = await createPackageOnlyTask(buildContext);
+  }
+  // run
+  if (argv.dryRun) {
+    console.log('Context:');
+    console.dir(argv.betty.context, { depth: 6, colors: true });
+    console.log('Task:');
+    console.dir(buildTask, { depth: 6, colors: true });
+  }
+  else {
+    await Betty.runTask(argv.betty, buildTask);
   }
 }
