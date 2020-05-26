@@ -1,28 +1,4 @@
 import { ok } from 'assert';
-import { join } from 'path';
-
-// this requires an optional package relative the the
-// target project root and not betty
-export function optionalRequire(packagePath, moduleName) {
-  ok(packagePath, 'packagePath required');
-  try {
-    const result = require(require.resolve(moduleName, {
-      paths: [
-        join(packagePath, 'node_modules'),
-      ],
-    }));
-    return result && 'default' in result ? result.default : result;
-  }
-  catch (err) {
-    if (err.code === 'MODULE_NOT_FOUND') {
-      return null;
-    }
-    else {
-      console.log('_optionalRequire error', err, join(packagePath, 'node_modules'));
-      throw err;
-    }
-  }
-}
 
 // an alias provided via cli
 export function parseArgvAlias(value) {

@@ -6,8 +6,10 @@ import inquirer from 'inquirer';
 
 import { WebpackBuildTask, PackageManagers } from '../../../lib/tasks/build.js';
 
+import { installRequiredPackages, optionalRequire } from '../common/packages.js';
+
 import { AWSSDK_PACKAGE_NAME } from './build-context.js';
-import { optionalRequire, parseArgvAlias } from './common.js';
+import { parseArgvAlias } from './common.js';
 
 const _webpackRequirements = [
   'webpack',
@@ -16,7 +18,7 @@ const _webpackRequirements = [
 const _noWebpackFound = async buildContext => {
   const { packagePath } = buildContext.betty.context;
   if (buildContext.options.interactive) {
-    const { packageManager } = buildContext
+    const { packageManager } = buildContext;
     const { answer } = await inquirer.prompt([
       {
         type: 'confirm',
@@ -34,20 +36,7 @@ const _noWebpackFound = async buildContext => {
       },
     ]);
     if (answer) {
-      let cmdPrefix;
-      if (packageManager === 'npm') {
-        cmdPrefix = 'npm install --save-dev';
-      }
-      else if (packageManager === 'yarn') {
-        cmdPrefix = 'yarn add --dev';
-      }
-      else {
-        throw new Error(`invalid packageManager; received "${packageManager}" but only "npm" and "yarn" allowed`);
-      }
-      execSync(cmdPrefix + ' ' + _webpackRequirements.join(' '), {
-        stdio:      'inherit',
-        cwd:        packagePath + '/',
-      });
+      await installRequiredPackages(packageManager, packagePath, _webpackRequirements);
       console.log('Done installing requirements. Please run the previous command again.');
     }
     else {

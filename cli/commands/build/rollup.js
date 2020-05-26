@@ -7,7 +7,7 @@ import inquirer from 'inquirer';
 import { RollupBuildTask, PackageManagers } from '../../../lib/tasks/build.js';
 
 import { AWSSDK_PACKAGE_NAME } from './build-context.js';
-import { optionalRequire } from './common.js';
+import { installRequiredPackages, optionalRequire } from '../common/packages.js';
 
 const _rollupRequirements = [
   'rollup',
@@ -20,7 +20,7 @@ const _rollupRequirements = [
 const _noRollupFound = async buildContext => {
   const { packagePath } = buildContext.betty.context;
   if (buildContext.options.interactive) {
-    const { packageManager } = buildContext
+    const { packageManager } = buildContext;
     const { answer } = await inquirer.prompt([
       {
         type: 'confirm',
@@ -38,20 +38,7 @@ const _noRollupFound = async buildContext => {
       },
     ]);
     if (answer) {
-      let cmdPrefix;
-      if (packageManager === 'npm') {
-        cmdPrefix = 'npm install --save-dev';
-      }
-      else if (packageManager === 'yarn') {
-        cmdPrefix = 'yarn add --dev';
-      }
-      else {
-        throw new Error(`invalid packageManager; received "${packageManager}" but only "npm" and "yarn" allowed`);
-      }
-      execSync(cmdPrefix + ' ' + _rollupRequirements.join(' '), {
-        stdio:      'inherit',
-        cwd:        packagePath + '/',
-      });
+      await installRequiredPackages(packageManager, packagePath, _rollupRequirements);
       console.log('Done installing requirements. Please run the previous command again.');
     }
     else {

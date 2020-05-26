@@ -1,33 +1,76 @@
+import inquirer from 'inquirer';
+
+import { CwtailLogsTask } from '../../lib/tasks/logs.js';
+
+import { Betty } from '../../lib/betty.js';
+
+import { installRequiredPackages, optionalRequire, inferPackageManager } from './common/packages.js';
+
 export const command = 'logs';
 export const desc    = 'Streams the cloudwatch log for the function';
 export const builder = {
-  region: {
-    describe:       'AWS region to target',
-  },
-  profile: {
-    describe:       'AWS credentials profile to target',
-  },
   name: {
     alias:          'n',
-    describe:       'The CloudWatch log name.',
+    describe:       'Override the target log group name. (Default is your resource.js -> "name")',
   },
 };
+
+const _missingRequirements = [
+  'cwtail',
+];
+
+const _noCwtail = async argv => {
+  const { packagePath } = argv.betty.context;
+  if (argv.interactive) {
+    const packageManager = await inferPackageManager(packagePath);
+    const { answer } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'answer',
+        message: [
+          'cwtail is required but was not found in the target project ',
+          `located in: "${packagePath}"\n`,
+          '\n',
+          'Would you like to install the requirements?\n',
+          '\n',
+          `This will install the following packages as devDependencies using "${packageManager}": `,
+          _missingRequirements.join(', '),
+        ].join(''),
+        default: false,
+      },
+    ]);
+    if (answer) {
+      await installRequiredPackages(packageManager, packagePath, _missingRequirements);
+      console.log('Done installing requirements. Please run the previous command again.');
+      process.exit(1);
+    }
+    else {
+      console.log('No packages installed');
+    }
+  }
+  else {
+    throw new Error(`cwtail is required; no cwtail found root "${packagePath}"`);
+  }
+};
+
 export async function handler(argv) {
-  // pull defaults from env
-  argv.region   = argv.region || global.betty.aws.region;
-  argv.profile  = argv.profile || global.betty.aws.profile;
-  argv.name     = argv.name || global.config.name;
-  argv.n        = argv.name;
-  const cmd     = path.join(global.betty.utils.cwd, './node_modules/.bin', 'pbcw');
-  const cmdArgs = [
-    `-p${argv.profile}`,
-    `-f`,
-    `/aws/lambda/${argv.name}`
-  ];
-  process.env.AWS_REGION = argv.region;
-  const pbcw = spawn(cmd, cmdArgs, {
-    stdio:          'inherit',
-    cwd:            global.betty.utils.cwd,
-  });
-  done(null);
+  const { betty, name: _name } = argv;
+  const { packagePath, resource } = betty.context;
+  const name = _name || resource.data.name;
+  try {
+    console.log('running task...');
+    await Betty.runTask(argv.betty, new CwtailLogsTask({
+      logGroupName: name,
+    }));
+    console.log('task complete');
+  }
+  catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log('here');
+      await _noCwtail(argv);
+    }
+    else {
+      throw err;
+    }
+  }
 }
