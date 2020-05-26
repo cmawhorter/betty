@@ -13,6 +13,11 @@ export const builder = {
     alias:          'n',
     describe:       'Override the target log group name. (Default is your resource.js -> "name")',
   },
+  bunyan: {
+    type:           'boolean',
+    default:        false,
+    describe:       'Format as bunyan log entries',
+  },
 };
 
 const _missingRequirements = [
@@ -54,13 +59,14 @@ const _noCwtail = async argv => {
 };
 
 export async function handler(argv) {
-  const { betty, name: _name } = argv;
+  const { betty, name: _name, bunyan } = argv;
   const { packagePath, resource } = betty.context;
   const name = _name || resource.data.name;
   try {
     console.log('running task...');
     await Betty.runTask(argv.betty, new CwtailLogsTask({
       logGroupName: name,
+      bunyan,
     }));
     console.log('task complete');
   }
