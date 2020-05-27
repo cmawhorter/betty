@@ -1,3 +1,5 @@
+// TODO: add support for building via docker-lambda for native dependencies
+
 import { ok } from 'assert';
 
 import { Betty } from '../../lib/betty.js';
@@ -14,7 +16,8 @@ import { createPackageOnlyTask } from './build/package-only.js';
 export const command = 'build';
 export const desc    = 'Compiles and transpiles source into a lambda-ready build';
 export const builder = {
-  // TODO: add flag to allow building via docker-lambda (if native compilation is required)
+  // TODO: add flag to allow building via docker-lambda (if native compilation is required). maybe just a --native? and that'd automatically external and trigger docker-lambda
+  // TODO: if deploying to lambdaedge environment should be prefixed onto the output
   rollup: {
     boolean:        true,
     describe:       'Compile with rollup',

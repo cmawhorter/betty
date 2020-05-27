@@ -4,9 +4,12 @@
   "additionalProperties":   false,
   "required":               [ "name" ],
   "properties": {
+    // remove this; never used
+    // or maybe switch it to service/component?
     "universe": {
       "$ref":               "#/definitions/identifier"
     },
+    // this belongs in config, not resource
     "region": {
       "oneOf": [
         {
@@ -54,6 +57,7 @@
         "$ref":             "#/definitions/person"
       }
     },
+    // TODO: define the valid properties and also include on for target: lambda, lambdaedge
     "configuration": {
       "type":               "object"
     },
@@ -133,6 +137,7 @@
       "maxLength":          10,
       "pattern":            "^(\\*|\\d{4}\\-\\d{2}\\-\\d{2})$"
     },
+    // TODO: add uid for each definition so that it is easy to sync
     "asset": {
       "type":               "object",
       "required":           [ "service", "name", "permissions" ],
