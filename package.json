@@ -34,6 +34,7 @@
     "ajv": "4.x",
     "archiver": "1.x",
     "builtin-modules": "^3.1.0",
+    "dotenv": "^8.2.0",
     "esm": "^3.2.25",
     "fs-extra": "^9.0.0",
     "inquirer": "^7.1.0",

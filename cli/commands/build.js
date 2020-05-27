@@ -14,6 +14,7 @@ import { createPackageOnlyTask } from './build/package-only.js';
 export const command = 'build';
 export const desc    = 'Compiles and transpiles source into a lambda-ready build';
 export const builder = {
+  // TODO: add flag to allow building via docker-lambda (if native compilation is required)
   rollup: {
     boolean:        true,
     describe:       'Compile with rollup',
@@ -44,14 +45,6 @@ export const builder = {
     array:          true,
     default:        [],
     describe:       'Tells compiler to replace one dependency with another. Format is "from:to" e.g. from "@something/here:my-custom-here". Only applies to webpack.',
-  },
-  destination: {
-    default:        'dist',
-    describe:       'The destination directory the build task will use for the compiled result.  If it does\'t exist it\'ll be created',
-  },
-  bundle: {
-    default:        'index.js',
-    describe:       'The name of the bundle file to create.  Will be combined with destination e.g. dist/index.js',
   },
   sourcemap: {
     boolean:        true,

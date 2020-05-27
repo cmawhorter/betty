@@ -1,5 +1,5 @@
 import { ok } from 'assert';
-import { join } from 'path';
+import { join, dirname } from 'path';
 
 import pickBy from 'lodash/pickBy';
 
@@ -50,10 +50,11 @@ export class BuildContext {
       npm,
       yarn,
       packageManager: _packageManager } = argv;
+    const { configuration } = betty.context.resource.data;
     const packageManager  = _packageManager || (npm && 'npm') || (yarn && 'yarn');
     const packageJson     = await readJson(betty.context.packagePath, PACKAGE_JSON);
     const dependencies    = _getDependencies(argv, packageJson.dependencies);
-    const distPath        = join(betty.context.projectPath, argv.destination);
+    const distPath        = join(betty.context.projectPath, dirname(configuration.main));
     return new BuildContext({
       betty,
       packageManager,

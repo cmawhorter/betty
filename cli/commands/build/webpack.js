@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { join } from 'path';
+import { basename, join } from 'path';
 
 import builtins from'builtin-modules';
 import inquirer from 'inquirer';
@@ -86,8 +86,9 @@ const _createWebpackConfig = async buildContext => {
     entry:              betty.context.sourceEntry,
     output: {
       path:             distPath,
-      filename:         bundle,
-      libraryTarget:    'commonjs2',
+      filename:         basename(betty.context.distEntry),
+      libraryExport:    'default',
+      libraryTarget:    'commonjs',
     },
     externals,
     optimization: {

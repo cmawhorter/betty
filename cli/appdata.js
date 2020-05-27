@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { join as joinPath, dirname } from 'path';
 
-import { sync as mkdirpSync } from 'mkdirp';
+import { ensureDirSync } from 'fs-extra';
 
 import { isMissingError, readJson } from '../lib/read.js';
 
@@ -15,7 +15,7 @@ export function buildPath(filename) {
 
 export function writeAppData(filename, data) {
   const file = buildPath(filename);
-  mkdirpSync(APPDATA_PATH);
+  ensureDirSync(APPDATA_PATH);
   writeFileSync(file, JSON.stringify(data, null, 2));
 }
 

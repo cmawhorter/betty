@@ -18,8 +18,6 @@ import { readAppData, writeAppData } from './appdata.js';
 // FIXME: remove this workaround to ==^
 inspect.defaultOptions.depth = 12;
 
-const ENV_STAGES = [ 'development', 'testing', 'staging', 'production' ];
-
 const loadAccountId = async profile => {
   const result = readAppData('aws.json');
   if (result && result[profile] && result[profile].accountId) {
@@ -34,17 +32,6 @@ const loadAccountId = async profile => {
     return accountId;
   }
 }
-
-const getEnv = argv => {
-  // if flag used that is given priority, otherwise use env option (which defaults to env var)
-  // ex: --production
-  for (const stage of ENV_STAGES) {
-    if (argv[stage] === true) {
-      return stage;
-    }
-  }
-  return argv.env;
-};
 
 yargs.middleware(async argv => {
   // console.log('middleware; argv', argv);
@@ -61,9 +48,6 @@ yargs.middleware(async argv => {
   const awsAccountId = account || await loadAccountId(profile);
   const context = new Context({
     cwd: process.cwd(),
-    // TODO: argv.source || 'src'
-    // sourcePath,
-    env: getEnv(argv),
     logLevel: argv.logLevel,
     awsAccountId,
     // these should probably be pulled from env and not passable
@@ -79,12 +63,6 @@ yargs.middleware(async argv => {
   const betty = new Betty(context);
   argv.betty = betty;
 });
-
-yargs
-  .option('env', {
-    default: process.env.BETTY_ENV || process.env.betty_env,
-  })
-  .boolean(ENV_STAGES);
 
 yargs.option('loglevel', {
   default: process.env.LOG_LEVEL || (process.env.DEBUG && 'debug'),
