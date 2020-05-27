@@ -18,7 +18,8 @@ import { readAppData, writeAppData } from './appdata.js';
 // FIXME: remove this workaround to ==^
 inspect.defaultOptions.depth = 12;
 
-const loadAccountId = async profile => {
+const loadAccountId = async () => {
+  const profile = process.env.AWS_PROFILE;
   const result = readAppData('aws.json');
   if (result && result[profile] && result[profile].accountId) {
     return result[profile].accountId;
@@ -33,35 +34,46 @@ const loadAccountId = async profile => {
   }
 }
 
+const _commandRequiresAccountId = command => [ 'update', 'publish' ].indexOf(command) > -1;
+
 yargs.middleware(async argv => {
-  // console.log('middleware; argv', argv);
-  const { account, profile, region } = argv;
-  ok(profile, 'aws profile required');
-  ok(region, 'aws region required');
-  // it's best to use these when working with aws-sdk
-  process.env.AWS_PROFILE = profile;
-  process.env.AWS_REGION = region;
+  console.log('argv', argv);
+  const { account, profile, region, config, target } = argv;
   // if not using cwd we'll chdir to the target just to keep things simple
-  if (argv._[1]) {
-    process.chdir(resolvePath(argv._[1]));
+  if (target) {
+    process.chdir(resolvePath(target));
+    delete argv.target; // we changed cwd so clean this up so it's not used anywhere instead of cwd
   }
-  const awsAccountId = account || await loadAccountId(profile);
   const context = new Context({
-    cwd: process.cwd(),
-    logLevel: argv.logLevel,
-    awsAccountId,
-    // these should probably be pulled from env and not passable
-    // to avoid confusion
-    awsProfile: profile,
-    awsRegion: region,
+    cwd:            process.cwd(),
+    config,
+    logLevel:       argv.logLevel,
+    awsAccountId:   account,
+    awsProfile:     profile,
+    awsRegion:      region,
     // this is not like the others. this feels more like a task/command setting
     // awsLambdaRole = awsDefaultLambdaExecutionRole,
   });
-  // this must come before load because loading context files can depend on it
+  ok(context.awsProfile, 'aws profile required');
+  ok(context.awsRegion, 'aws region required');
+  // it's best to use these when working with aws-sdk
+  process.env.AWS_PROFILE = context.awsProfile;
+  process.env.AWS_REGION  = context.awsRegion;
+  // if we don't know of one we'll try to load one
+  if (!context.awsAccountId && _commandRequiresAccountId(argv._[0])) {
+    context.awsAccountId = await loadAccountId();
+  }
+  // this must come before loadResource because it may depend on it
   global.betty = context;
-  await context.load();
-  const betty = new Betty(context);
-  argv.betty = betty;
+  context.loadResource();
+  argv.betty = new Betty(context);
+});
+
+yargs.strict(true);
+
+yargs.option('config', {
+  alias: 'c',
+  describe: 'The path to a config file to use. If not provided an attempt will be made to load either betty.js or betty.json from the cwd',
 });
 
 yargs.option('loglevel', {
@@ -77,6 +89,11 @@ yargs.option('profile', {
 
 yargs.option('region', {
   default: process.env.AWS_REGION,
+});
+
+yargs.option('target', {
+  describe: 'The project directory to target if not cwd',
+  default: process.cwd(),
 });
 
 yargs.option('interactive', {
