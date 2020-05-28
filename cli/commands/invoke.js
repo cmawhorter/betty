@@ -1,5 +1,7 @@
 import { Lambda } from 'aws-sdk';
 
+// TODO: add local invoke for if local serve running
+
 export const command = 'invoke';
 export const desc    = 'Outputs info about the current project context';
 export const builder = {
