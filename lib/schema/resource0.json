@@ -9,20 +9,6 @@
     "universe": {
       "$ref":               "#/definitions/identifier"
     },
-    // this belongs in config, not resource
-    "region": {
-      "oneOf": [
-        {
-          "type":           "array",
-          "items": {
-            "$ref":         "#/definitions/identifier"
-          }
-        },
-        {
-          "$ref":           "#/definitions/identifier"
-        }
-      ]
-    },
     "name": {
       "$ref":               "#/definitions/identifier",
       "maxLength":          64
@@ -58,8 +44,30 @@
       }
     },
     // TODO: define the valid properties and also include on for target: lambda, lambdaedge
+    // TODO: environment should require all strings
+    // TODO: rename entry -> handler
     "configuration": {
       "type":               "object"
+      // TODO: add vpc {}
+      // TODO: add dlq: arn (or relative), dlq_service (either sqs or sns)
+      // TODO: add tracing for tracing config
+      // TODO: add s3 deploy target relative arn only
+      // TODO: add role for the global_policy
+      // TODO: timeout
+    },
+    // TODO: move this into configuration. two options; single string region, array of string regions
+    "region": {
+      "oneOf": [
+        {
+          "type":           "array",
+          "items": {
+            "$ref":         "#/definitions/identifier"
+          }
+        },
+        {
+          "$ref":           "#/definitions/identifier"
+        }
+      ]
     },
     "assets": {
       "type":               "array",

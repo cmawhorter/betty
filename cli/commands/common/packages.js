@@ -4,6 +4,8 @@ import { join } from 'path';
 
 import { pathExists } from 'fs-extra';
 
+import { parseKeyValue } from './options.js';
+
 // this requires an optional package relative the the
 // target project root and not betty
 export function optionalRequire(packagePath, moduleName) {
@@ -21,7 +23,6 @@ export function optionalRequire(packagePath, moduleName) {
       return null;
     }
     else {
-      console.log('_optionalRequire error', err, join(packagePath, 'node_modules'));
       throw err;
     }
   }
@@ -29,12 +30,7 @@ export function optionalRequire(packagePath, moduleName) {
 
 // an alias provided via cli
 export function parseArgvAlias(value) {
-  ok(typeof value === 'string' && value.indexOf(':') > -1,
-    `invalid alias provided; expected format "from:to" but received "${value}"`);
-  const parts = value.split(':');
-  ok(parts.length === 2,
-    'invalid alias provided; more than one colon in value');
-  const [from,to] = parts;
+  const { key: from, value: to } = parseKeyValue(value, ':');
   return { from, to };
 }
 
@@ -59,7 +55,7 @@ export async function installRequiredPackages(packageManager, packagePath, packa
     stdio:      'inherit',
     cwd:        packagePath + '/',
   });
-};
+}
 
 export const NPM_LOCK_FILENAME = 'package-lock.json';
 export const YARN_LOCK_FILENAME = 'yarn.lock';

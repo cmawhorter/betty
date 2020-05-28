@@ -1,10 +1,7 @@
-import { execSync } from 'child_process';
-import { join } from 'path';
-
 import builtins from'builtin-modules';
 import inquirer from 'inquirer';
 
-import { RollupBuildTask, PackageManagers } from '../../../lib/tasks/build.js';
+import { RollupBuildTask } from '../../../lib/tasks/build.js';
 
 import { AWSSDK_PACKAGE_NAME } from './build-context.js';
 import { installRequiredPackages, optionalRequire } from '../common/packages.js';
@@ -39,10 +36,10 @@ const _noRollupFound = async buildContext => {
     ]);
     if (answer) {
       await installRequiredPackages(packageManager, packagePath, _rollupRequirements);
-      console.log('Done installing requirements. Please run the previous command again.');
+      // console.log('Done installing requirements. Please run the previous command again.');
     }
     else {
-      console.log('No packages installed');
+      // console.log('No packages installed');
     }
   }
   else {
@@ -82,14 +79,12 @@ const _loadRollupPlugins = async buildContext => {
 const _createRollupConfig = async buildContext => {
   const {
     betty,
-    distPath,
     dependencies: externalDependencies,
     options } = buildContext;
   const {
     sourcemap,
     externalAwssdk,
-    externalBuiltins,
-    bundle } = options;
+    externalBuiltins } = options;
   const format = 'cjs';
   const external = [
     ...(externalAwssdk && [ AWSSDK_PACKAGE_NAME ] || []),
@@ -101,7 +96,7 @@ const _createRollupConfig = async buildContext => {
     input:              betty.context.sourceEntry,
     external,
     output: {
-      file:             join(distPath, bundle),
+      file:             betty.context.distEntry,
       format,
       sourcemap,
     },

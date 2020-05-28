@@ -4,14 +4,15 @@ import { inspect } from 'util';
 
 import yargs from 'yargs';
 
-import { RollupBuildTask } from '../lib/tasks/build.js';
-
 import { getAwsAccountId } from '../lib/aws/account.js';
 
 import { Betty } from '../lib/betty.js';
 import { Context } from '../lib/context.js';
 
 import { readAppData, writeAppData } from './appdata.js';
+
+// TODO: add command for generating a file with encrypted hash values (kms)
+// TODO: add init command for creating a new project
 
 // providing inline wasn't working with:
 // console.dir(obj, { ...options })
@@ -25,27 +26,28 @@ const loadAccountId = async () => {
     return result[profile].accountId;
   }
   else {
-    console.log('loading account id from remote');
     const accountId = await getAwsAccountId();
     writeAppData('aws.json', Object.assign({}, result, {
       [profile]: Object.assign({}, result[profile], { accountId })
     }));
     return accountId;
   }
-}
+};
 
 const _commandRequiresAccountId = command => [ 'update', 'publish' ].indexOf(command) > -1;
+const _commandRequiresProfile = command => [ 'update' ].indexOf(command) > -1;
 
 yargs.middleware(async argv => {
-  console.log('argv', argv);
-  const { account, profile, region, config, target } = argv;
+  const command = argv._[0];
+  const { account, profile, region, config, project } = argv;
   // if not using cwd we'll chdir to the target just to keep things simple
-  if (target) {
-    process.chdir(resolvePath(target));
-    delete argv.target; // we changed cwd so clean this up so it's not used anywhere instead of cwd
+  if (project) {
+    process.chdir(resolvePath(project));
+    delete argv.project; // we changed cwd so clean this up so it's not used anywhere instead of cwd
   }
   const context = new Context({
     cwd:            process.cwd(),
+    env:            argv.env,
     config,
     logLevel:       argv.logLevel,
     awsAccountId:   account,
@@ -54,13 +56,14 @@ yargs.middleware(async argv => {
     // this is not like the others. this feels more like a task/command setting
     // awsLambdaRole = awsDefaultLambdaExecutionRole,
   });
-  ok(context.awsProfile, 'aws profile required');
-  ok(context.awsRegion, 'aws region required');
+  _commandRequiresProfile(command) && ok(context.awsProfile, 'aws profile required');
+  // no commands require region any longer
+  // ok(context.awsRegion, 'aws region required');
   // it's best to use these when working with aws-sdk
   process.env.AWS_PROFILE = context.awsProfile;
   process.env.AWS_REGION  = context.awsRegion;
   // if we don't know of one we'll try to load one
-  if (!context.awsAccountId && _commandRequiresAccountId(argv._[0])) {
+  if (!context.awsAccountId && _commandRequiresAccountId(command)) {
     context.awsAccountId = await loadAccountId();
   }
   // this must come before loadResource because it may depend on it
@@ -91,7 +94,7 @@ yargs.option('region', {
   default: process.env.AWS_REGION,
 });
 
-yargs.option('target', {
+yargs.option('project', {
   describe: 'The project directory to target if not cwd',
   default: process.cwd(),
 });
@@ -102,8 +105,14 @@ yargs.option('interactive', {
   describe: 'When disabled, will never request input and will instead exit with error',
 });
 
-yargs.commandDir('./commands');
+yargs.option('env', {
+  deprecated: true,
+  describe: 'For use with v1.x resource.js files requiring a global.betty.env',
+  default: process.env.betty_env,
+});
 
-yargs.help('h').alias('h', 'help');
+yargs.commandDir('./commands').demandCommand();
+
+yargs.help();
 
 yargs.parse();

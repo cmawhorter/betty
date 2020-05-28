@@ -1,56 +1,58 @@
-'use strict';
+import { readJsonSync } from 'fs-extra';
 
-const deepAssign = require('deep-assign');
-const schema = require('../common/schema.js');
+import { _client } from '../lib/schema/validation.js';
 
-const validMockResourceJson = require('./mocks/resource.json.js');
+const validMockResourceJson = readJsonSync(__dirname + '/mocks/resource.json');
 const invalidMockResourceJson = {};
+
+const clone = value => JSON.parse(JSON.stringify(value));
 
 // https://github.com/epoberezkin/ajv#validation-errors
 // simplify finding out why tests fail
 const outputErrors = () => {
-  if (schema.errors && schema.errors.length > 0) {
-    console.log('Schema validation errors:', schema.errors);
+  if (_client.errors && _client.errors.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log('Schema validation errors:', _client.errors);
   }
-}
+};
 
 describe('schema', function() {
   it('should validate resource.json', function() {
-    let validationResult = schema.validate('resource', validMockResourceJson);
+    const validationResult = _client.validate('resource', validMockResourceJson);
     outputErrors();
-    expect(validationResult).toEqual(true);
+    expect(validationResult).to.equal(true);
   });
   it('should detect invalid resource.json', function() {
-    let validationResult = schema.validate('resource', invalidMockResourceJson);
-    expect(validationResult).toEqual(false);
+    const validationResult = _client.validate('resource', invalidMockResourceJson);
+    expect(validationResult).to.equal(false);
   });
   it('should support vpc in lambda config', function() {
-    let resource = deepAssign({}, validMockResourceJson);
+    const resource = clone(validMockResourceJson);
     resource.configuration.vpc = null;
-    let validationResult = schema.validate('resource', resource);
+    const validationResult = _client.validate('resource', resource);
     outputErrors();
-    expect(validationResult).toEqual(true);
+    expect(validationResult).to.equal(true);
     resource.configuration.vpc = {
       subnetIds: [ '1', '2', '3' ],
       securityGroupIds: [ '1', '2', '3' ],
     };
-    validationResult = schema.validate('resource', resource);
+    const validationResult2 = _client.validate('resource', resource);
     outputErrors();
-    expect(validationResult).toEqual(true);
+    expect(validationResult2).to.equal(true);
   });
   it('should support deadLetterQueue in lambda config', function() {
-    let resource = deepAssign({}, validMockResourceJson);
+    const resource = clone(validMockResourceJson);
     resource.configuration.deadLetterQueue = null;
-    let validationResult = schema.validate('resource', resource);
+    const validationResult = _client.validate('resource', resource);
     outputErrors();
-    expect(validationResult).toEqual(true);
+    expect(validationResult).to.equal(true);
     resource.configuration.deadLetterQueue = 'some-queue-name';
-    validationResult = schema.validate('resource', resource);
+    const validationResult2 = _client.validate('resource', resource);
     outputErrors();
-    expect(validationResult).toEqual(true);
+    expect(validationResult2).to.equal(true);
     resource.configuration.deadLetterQueue = 'arn:sqs:12345:us-west-2:some-queue-name';
-    validationResult = schema.validate('resource', resource);
+    const validationResult3 = _client.validate('resource', resource);
     outputErrors();
-    expect(validationResult).toEqual(true);
+    expect(validationResult3).to.equal(true);
   });
 });

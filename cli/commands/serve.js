@@ -1,12 +1,6 @@
-import { join, dirname } from 'path';
-
-import inquirer from 'inquirer';
-
 import { DockerLambdaServeTask } from '../../lib/tasks/serve.js';
 
 import { Betty } from '../../lib/betty.js';
-
-const exampleEvalHandler = function(event, context, callback) { callback(null, { hello: 'world' }); };
 
 export const command = 'serve';
 export const desc    = 'Runs the project in docker-lambda in interactive mode (http)';

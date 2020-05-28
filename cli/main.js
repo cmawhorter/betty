@@ -3,6 +3,6 @@
 
 process.title = 'betty';
 
-require = require('esm')(module);
+require = require('esm')(module); // eslint-disable-line no-global-assign
 
 require('./cli.js');

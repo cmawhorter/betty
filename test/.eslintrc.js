@@ -7,4 +7,7 @@ module.exports = {
     chai: true,
     expect: true,
   },
+  rules: {
+    'no-console': 1,
+  },
 };

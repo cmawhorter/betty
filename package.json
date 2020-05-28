@@ -10,11 +10,11 @@
   "scripts": {
     "preinstall": "node -e 'if(/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"This repo requires npm\")'",
     "lintcli": "./node_modules/.bin/eslint ./cli",
-    "lintcommon": "./node_modules/.bin/eslint ./common",
+    "lintlib": "./node_modules/.bin/eslint ./lib",
     "linttests": "./node_modules/.bin/eslint ./test",
-    "lint": "npm run lintcli && npm run lintcommon && npm run linttests",
+    "lint": "npm run lintcli && npm run lintlib && npm run linttests",
     "pretest": "npm run lint",
-    "test": "./node_modules/.bin/mocha -r ./test/lib/helper test",
+    "test": "./node_modules/.bin/mocha -r esm -r ./test/lib/helper test",
     "coverage": "./node_modules/.bin/nyc npm run test"
   },
   "author": {
@@ -40,7 +40,6 @@
     "inquirer": "^7.1.0",
     "jsonc-parser": "^2.2.1",
     "lodash": "^4.17.15",
-    "slug": "3.x",
     "stream-buffers": "3.x",
     "urn-lib": "1.x",
     "yargs": "15.x"

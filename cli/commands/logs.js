@@ -4,7 +4,7 @@ import { CwtailLogsTask } from '../../lib/tasks/logs.js';
 
 import { Betty } from '../../lib/betty.js';
 
-import { installRequiredPackages, optionalRequire, inferPackageManager } from './common/packages.js';
+import { installRequiredPackages, inferPackageManager } from './common/packages.js';
 
 export const command = 'logs';
 export const desc    = 'Streams the cloudwatch log for the function';
@@ -46,11 +46,11 @@ const _noCwtail = async argv => {
     ]);
     if (answer) {
       await installRequiredPackages(packageManager, packagePath, _missingRequirements);
-      console.log('Done installing requirements. Please run the previous command again.');
+      // console.log('Done installing requirements. Please run the previous command again.');
       process.exit(1);
     }
     else {
-      console.log('No packages installed');
+      // console.log('No packages installed');
     }
   }
   else {
@@ -60,19 +60,16 @@ const _noCwtail = async argv => {
 
 export async function handler(argv) {
   const { betty, name: _name, bunyan } = argv;
-  const { packagePath, resource } = betty.context;
+  const { resource } = betty.context;
   const name = _name || resource.data.name;
   try {
-    console.log('running task...');
     await Betty.runTask(argv.betty, new CwtailLogsTask({
       logGroupName: name,
       bunyan,
     }));
-    console.log('task complete');
   }
   catch (err) {
     if (err.code === 'ENOENT') {
-      console.log('here');
       await _noCwtail(argv);
     }
     else {

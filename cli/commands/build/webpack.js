@@ -1,10 +1,8 @@
-import { execSync } from 'child_process';
-import { basename, join } from 'path';
+import { basename } from 'path';
 
-import builtins from'builtin-modules';
 import inquirer from 'inquirer';
 
-import { WebpackBuildTask, PackageManagers } from '../../../lib/tasks/build.js';
+import { WebpackBuildTask } from '../../../lib/tasks/build.js';
 
 import { installRequiredPackages, optionalRequire } from '../common/packages.js';
 
@@ -37,10 +35,10 @@ const _noWebpackFound = async buildContext => {
     ]);
     if (answer) {
       await installRequiredPackages(packageManager, packagePath, _webpackRequirements);
-      console.log('Done installing requirements. Please run the previous command again.');
+      // console.log('Done installing requirements. Please run the previous command again.');
     }
     else {
-      console.log('No packages installed');
+      // console.log('No packages installed');
     }
   }
   else {
@@ -73,7 +71,7 @@ const _createWebpackConfig = async buildContext => {
     externalAwssdk,
     // don't think this is needed w/webpack?
     // externalBuiltins,
-    bundle } = options;
+  } = options;
   const externals = [
     ...(externalAwssdk && [ AWSSDK_PACKAGE_NAME ] || []),
     ...Object.keys(externalDependencies),
