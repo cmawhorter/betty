@@ -117,12 +117,10 @@ export async function handler(argv) {
   }
   // run
   if (argv.dryRun) {
-    console.log('Context:'); // eslint-disable-line no-console
-    console.dir(argv.betty.context, { depth: 6, colors: true }); // eslint-disable-line no-console
-    console.log('Task:'); // eslint-disable-line no-console
-    console.dir(buildTask, { depth: 6, colors: true }); // eslint-disable-line no-console
+    logger.block('Context', betty.context);
+    logger.block('Build task', buildTask);
   }
   else {
-    await Betty.runTask(argv.betty, buildTask);
+    await Betty.runTask(betty, buildTask);
   }
 }

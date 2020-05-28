@@ -10,6 +10,9 @@ import { Betty } from '../lib/betty.js';
 import { Context } from '../lib/context.js';
 
 import { readAppData, writeAppData } from './appdata.js';
+import * as logger from './logger.js';
+
+global.logger = logger;
 
 // TODO: add command for generating a file with encrypted hash values (kms)
 // TODO: add init command for creating a new project

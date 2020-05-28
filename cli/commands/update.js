@@ -46,10 +46,10 @@ export async function handler(argv) {
     updateConfiguration: argv.refresh,
   });
   if (argv.dryRun) {
-    console.log('Context:'); // eslint-disable-line no-console
-    console.dir(betty.context, { depth: 6, colors: true }); // eslint-disable-line no-console
-    console.log('Task:'); // eslint-disable-line no-console
-    console.dir(task, { depth: 6, colors: true }); // eslint-disable-line no-console
+    logger.write(logger.chalk.bold.grey('Context'));
+    logger.write(betty.context);
+    logger.write(logger.chalk.bold.grey('Task'));
+    logger.write(task);
   }
   else {
     await Betty.runTask(betty, task);
