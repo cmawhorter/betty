@@ -3,6 +3,5 @@
 
 process.title = 'betty';
 
-require = require('esm')(module); // eslint-disable-line no-global-assign
-
+require('reify');
 require('./cli.js');
