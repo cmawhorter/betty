@@ -37,9 +37,6 @@ const loadAccountId = async () => {
   }
 };
 
-const _commandRequiresAccountId = command => [ 'update', 'publish' ].indexOf(command) > -1;
-const _commandRequiresProfile = command => [ 'update' ].indexOf(command) > -1;
-
 yargs.middleware(async argv => {
   const command = argv._[0];
   const { account, profile, region, config, project } = argv;
@@ -59,16 +56,13 @@ yargs.middleware(async argv => {
     // this is not like the others. this feels more like a task/command setting
     // awsLambdaRole = awsDefaultLambdaExecutionRole,
   });
-  _commandRequiresProfile(command) && ok(context.awsProfile, 'aws profile required');
+  ok(context.awsProfile, 'aws profile required');
   // no commands require region any longer
   // ok(context.awsRegion, 'aws region required');
   // it's best to use these when working with aws-sdk
   process.env.AWS_PROFILE = context.awsProfile;
   process.env.AWS_REGION  = context.awsRegion;
-  // if we don't know of one we'll try to load one
-  if (!context.awsAccountId && _commandRequiresAccountId(command)) {
-    context.awsAccountId = await loadAccountId();
-  }
+  context.awsAccountId = await loadAccountId();
   // this must come before loadResource because it may depend on it
   global.betty = context;
   context.loadResource();
