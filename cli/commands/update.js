@@ -21,7 +21,7 @@ export const builder = {
   // publish: {
   //   describe:       'Publish a new aliased version of the lambda function. Defaults to date; provide a value to override',
   // },
-  refresh: {
+  configuration: {
     type:           'boolean',
     default:        true,
     describe:       'Update the function configuration in addition to updating code. This only applies after the function was created (all new functions have their configuration updated as part of creating)',
@@ -38,12 +38,12 @@ export const builder = {
 };
 
 export async function handler(argv) {
-  const { betty, output, upload } = argv;
-  ok(output || upload, 'either --output or --upload required');
+  const { betty, output, upload, configuration } = argv;
+  ok(output || upload || configuration, 'either --output, --upload, or --configuration required');
   const task = new LambdaUpdateTask({
-    outputPath: true === argv.output ? process.cwd() : argv.output,
-    upload: argv.upload,
-    updateConfiguration: argv.refresh,
+    outputPath: true === output ? process.cwd() : output,
+    upload,
+    updateConfiguration: configuration,
   });
   if (argv.dryRun) {
     logger.write(logger.chalk.bold.grey('Context'));

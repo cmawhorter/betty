@@ -38,7 +38,7 @@ const loadAccountId = async () => {
 };
 
 yargs.middleware(async argv => {
-  const command = argv._[0];
+  // const command = argv._[0];
   const { account, profile, region, config, project } = argv;
   // if not using cwd we'll chdir to the target just to keep things simple
   if (project) {

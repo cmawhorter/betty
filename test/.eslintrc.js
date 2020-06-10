@@ -6,6 +6,7 @@ module.exports = {
     assert: true,
     chai: true,
     expect: true,
+    ok: true,
   },
   rules: {
     'no-console': 1,
