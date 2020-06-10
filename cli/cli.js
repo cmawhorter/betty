@@ -31,7 +31,7 @@ const loadAccountId = async () => {
   else {
     const accountId = await getAwsAccountId();
     writeAppData('aws.json', Object.assign({}, result, {
-      [profile]: Object.assign({}, result[profile], { accountId })
+      [profile]: Object.assign({}, (result || {})[profile], { accountId })
     }));
     return accountId;
   }
