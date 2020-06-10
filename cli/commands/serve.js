@@ -16,6 +16,12 @@ export const builder = {
     default:        '9001',
     describe:       'The port for the docker-lambda http server',
   },
+  env: {
+    alias:          'e',
+    type:           'array',
+    describe:       'An env variable to pass to docker and inherit from current. You you\'d like to provide a value then use resource.configuration.environment',
+    default:        [ 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY' ],
+  },
 };
 
 export async function handler(argv) {
@@ -30,6 +36,7 @@ export async function handler(argv) {
     build:          false,
     port,
     env:            environment,
+    inheritEnv:     argv.env,
     interactive:    true,
     watch,
   });
