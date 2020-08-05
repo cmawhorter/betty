@@ -28,7 +28,7 @@ describe('docker-lambda', () => {
         'index.handler',
       ]);
     });
-    it.only('should build an array of args for: build=false, interactive=false', () => {
+    it('should build an array of args for: build=false, interactive=false', () => {
       const result = buildDockerRunArgs({
         env: { a: 'variable' },
         inheritEnv: [ 'AWS_ACCESS_KEY_ID' ],
@@ -54,7 +54,7 @@ describe('docker-lambda', () => {
         '"{}"',
       ]);
     });
-    it.only('should build an array of args for: build=true', () => {
+    it('should build an array of args for: build=true', () => {
       const result = buildDockerRunArgs({
         env: { a: 'variable' },
         inheritEnv: [ 'AWS_ACCESS_KEY_ID' ],
