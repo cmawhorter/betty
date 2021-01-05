@@ -58,7 +58,7 @@ const _loadWebpack = async buildContext => {
   return webpack;
 };
 
-const _createWebpackConfig = async buildContext => {
+export async function _createWebpackConfig(buildContext) {
   const {
     betty,
     distPath,
@@ -101,7 +101,7 @@ const _createWebpackConfig = async buildContext => {
         }),
     },
   };
-};
+}
 
 export async function createWebpackTask(buildContext) {
   const webpack = await _loadWebpack(buildContext);
